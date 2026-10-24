@@ -601,6 +601,7 @@ function planView() {
   crosshair.style.display = 'none';
   document.querySelector('#planBtn').classList.add('primary');
   document.querySelector('#walkBtn').classList.remove('primary');
+  refreshSelectionUI();
 }
 
 function walkView() {
@@ -610,6 +611,7 @@ function walkView() {
   walk.lock(); crosshair.style.display = 'block';
   document.querySelector('#walkBtn').classList.add('primary');
   document.querySelector('#planBtn').classList.remove('primary');
+  refreshSelectionUI();
 }
 
 function rootsFromIntersections(items) {
@@ -675,9 +677,20 @@ function refreshSelectionUI() {
       : '';
     selectionEl.textContent = `Selected: ${item.userData.displayName}${detail}`;
   }
-  const shapesOnly = items.length > 0 && items.every(isBasicShape);
-  document.querySelector('#elevationBtn').disabled = !shapesOnly;
-  document.querySelector('#scaleBtn').disabled = !shapesOnly;
+  const editing = mode === 'plan' && items.length > 0;
+  const shapesOnly = editing && items.every(isBasicShape);
+  const editableLabel = editing && items.length === 1 && ['label', 'measurement'].includes(items[0].userData.kind);
+  document.querySelector('#contextHint').hidden = editing;
+  document.querySelector('#contextHint').textContent = mode === 'walk' ? 'Switch to Plan to edit objects' : 'Select an object to see its actions';
+  document.querySelector('#nudgeLabel').hidden = !editing;
+  document.querySelector('#nudgeButtons').hidden = !editing;
+  document.querySelector('#rotateBtn').hidden = !editing;
+  document.querySelector('#deleteBtn').hidden = !editing;
+  document.querySelector('#clearSelectionBtn').hidden = !editing;
+  document.querySelector('#elevationBtn').hidden = !shapesOnly;
+  document.querySelector('#scaleBtn').hidden = !shapesOnly;
+  document.querySelector('#editTextBtn').hidden = !editableLabel;
+  requestAnimationFrame(updateCatalogTop);
 }
 
 function clearSelection() {
@@ -779,6 +792,19 @@ function rotateSelected() {
     object.rotation.y += Math.PI/2;
   });
   saveLayout(); refreshSelectionUI();
+}
+
+function nudgeSelected(dx, dz) {
+  if (!selectedItems.size || mode !== 'plan') return;
+  selectedItems.forEach(item => { item.position.x += dx; item.position.z += dz; });
+  saveLayout(); refreshSelectionUI();
+}
+
+function updateCatalogTop() {
+  const topbar = document.querySelector('.topbar');
+  if (!topbar) return;
+  const top = Math.ceil(topbar.getBoundingClientRect().bottom + 12);
+  document.documentElement.style.setProperty('--catalog-top', `${Math.max(108, top)}px`);
 }
 
 function currentLayoutObjects() {
@@ -985,6 +1011,11 @@ document.querySelector('#editTextBtn').addEventListener('click', editSelectedTex
 document.querySelector('#deleteBtn').addEventListener('click', deleteSelection);
 document.querySelector('#elevationBtn').addEventListener('click', setShapeElevation);
 document.querySelector('#scaleBtn').addEventListener('click', setShapeScale);
+document.querySelector('#clearSelectionBtn').addEventListener('click', clearSelection);
+document.querySelector('#nudgeUpBtn').addEventListener('click', () => nudgeSelected(0, -.1));
+document.querySelector('#nudgeLeftBtn').addEventListener('click', () => nudgeSelected(-.1, 0));
+document.querySelector('#nudgeDownBtn').addEventListener('click', () => nudgeSelected(0, .1));
+document.querySelector('#nudgeRightBtn').addEventListener('click', () => nudgeSelected(.1, 0));
 document.querySelector('#saveBtn').addEventListener('click', exportLayout);
 document.querySelector('#loadBtn').addEventListener('click', () => document.querySelector('#loadInput').click());
 document.querySelector('#loadInput').addEventListener('change', event => {
@@ -1035,15 +1066,12 @@ addEventListener('keydown', e => {
     if(e.code==='KeyR' && !e.repeat) rotateSelected();
     if(e.code==='KeyT' && !e.repeat) editSelectedText();
     if(e.code==='Delete' || e.code==='Backspace') { e.preventDefault(); deleteSelection(); return; }
-    const n=.1;
-    selectedItems.forEach(item => {
-      if(e.code==='ArrowLeft') item.position.x-=n; if(e.code==='ArrowRight') item.position.x+=n;
-      if(e.code==='ArrowUp') item.position.z-=n; if(e.code==='ArrowDown') item.position.z+=n;
-    });
-    if(e.code.startsWith('Arrow')) { e.preventDefault(); saveLayout(); refreshSelectionUI(); }
+    const nudges = { ArrowLeft:[-.1,0], ArrowRight:[.1,0], ArrowUp:[0,-.1], ArrowDown:[0,.1] };
+    if (nudges[e.code]) { e.preventDefault(); nudgeSelected(...nudges[e.code]); }
   }
 });
 addEventListener('keyup', e => keys.delete(e.code));
+addEventListener('resize', updateCatalogTop);
 
 function playerCollides(pos) {
   const radius=.23;

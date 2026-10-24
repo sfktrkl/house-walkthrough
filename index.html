@@ -32,6 +32,13 @@
     .brand p { margin: 0; color: var(--muted); font-size: 12px; }
     .actions { display:flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; pointer-events: auto; }
     .actions button { padding: 9px 10px; font-size: 11px; }
+    .action-stack { display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:0; max-width:calc(100vw - 380px); }
+    .context-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px; padding:7px; border:1px solid var(--line); border-radius:14px; background:var(--panel); box-shadow:0 10px 30px rgba(0,0,0,.2); pointer-events:auto; backdrop-filter:blur(16px); }
+    .context-actions button { padding:7px 9px; font-size:11px; }
+    .context-hint, .nudge-label { color:var(--muted); font-size:10px; padding:0 4px; }
+    .nudge-buttons { display:flex; gap:4px; }
+    .nudge-buttons button { min-width:32px; padding:6px 8px; font-size:13px; }
+    [hidden] { display:none !important; }
     button {
       border: 1px solid var(--line); color: var(--ink); background: rgba(28,31,31,.94);
       padding: 10px 13px; border-radius: 12px; font-weight: 700; cursor: pointer;
@@ -54,12 +61,9 @@
     .deselect-object { display:flex; flex:0 0 22px; align-items:center; justify-content:center; width:22px; height:22px; padding:0; border-radius:6px; border-color:rgba(255,184,92,.35); background:rgba(255,184,92,.12); color:var(--accent); font-size:16px; line-height:1; cursor:pointer; pointer-events:auto; }
     .deselect-object:hover { border-color:var(--accent); background:rgba(255,184,92,.24); }
     .empty-selection { padding:5px 7px; color:var(--muted); font-size:10px; }
-    .selection-actions { display:flex; gap:7px; margin:7px 0 3px; pointer-events:auto; }
-    .selection-actions button { flex:1; padding:8px 9px; font-size:10px; }
-    .selection-actions button:disabled { opacity:.38; cursor:not-allowed; }
     .help { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
     #catalog {
-      position: absolute; left: 18px; top: 108px; bottom: 18px; width: min(340px, calc(100vw - 36px));
+      position: absolute; left: 18px; top: var(--catalog-top, 108px); bottom: 18px; width: min(340px, calc(100vw - 36px));
       padding: 13px; overflow-y: auto; pointer-events: auto;
       scrollbar-width: thin; scrollbar-color: rgba(255,184,92,.5) transparent;
     }
@@ -88,10 +92,11 @@
     #toast.show { opacity:1; }
     @media (max-width: 720px) {
       .topbar { flex-direction:column; }
-      .actions { justify-content:flex-start; }
+      .action-stack { align-items:stretch; width:100%; max-width:none; }
+      .actions, .context-actions { justify-content:flex-start; }
       .brand p { display:none; }
       .panel { width: calc(100vw - 36px); }
-      #catalog { top: 170px; width: min(315px, calc(100vw - 36px)); bottom: 170px; }
+      #catalog { width: min(315px, calc(100vw - 36px)); bottom: 170px; }
     }
   </style>
   <script src="./vendor/three.min.js"></script>
@@ -121,17 +126,32 @@
         <h1>House Walkthrough Studio</h1>
         <p>Design, measure, furnish, and explore your space</p>
       </div>
+      <div class="action-stack">
       <div class="actions">
         <button id="planBtn" class="primary">Plan (P)</button>
         <button id="walkBtn">Walk (V)</button>
         <button id="measureBtn">Measure (M)</button>
-        <button id="rotateBtn">Rotate (R)</button>
-        <button id="editTextBtn">Edit label (T)</button>
-        <button id="deleteBtn">Delete (Del)</button>
         <button id="saveBtn">Save (Ctrl+S)</button>
         <button id="loadBtn">Load (Ctrl+O)</button>
         <button id="resetBtn">Reset (0)</button>
         <button id="helpBtn">Features (H)</button>
+      </div>
+      <div class="context-actions" id="contextActions" aria-label="Available object actions">
+        <span class="context-hint" id="contextHint">Select an object to see its actions</span>
+        <span class="nudge-label" id="nudgeLabel" hidden>Move 10 cm</span>
+        <span class="nudge-buttons" id="nudgeButtons" hidden>
+          <button id="nudgeUpBtn" type="button" aria-label="Move selected objects up" title="Move 10 cm up">↑</button>
+          <button id="nudgeLeftBtn" type="button" aria-label="Move selected objects left" title="Move 10 cm left">←</button>
+          <button id="nudgeDownBtn" type="button" aria-label="Move selected objects down" title="Move 10 cm down">↓</button>
+          <button id="nudgeRightBtn" type="button" aria-label="Move selected objects right" title="Move 10 cm right">→</button>
+        </span>
+        <button id="rotateBtn" type="button" title="Rotate selected objects 90° (R)" hidden>Rotate 90°</button>
+        <button id="elevationBtn" type="button" title="Set elevation above the floor (E)" hidden>Elevation</button>
+        <button id="scaleBtn" type="button" title="Set object scale (K)" hidden>Scale</button>
+        <button id="editTextBtn" type="button" title="Edit selected label (T)" hidden>Edit label</button>
+        <button id="deleteBtn" type="button" title="Delete selected objects (Delete)" hidden>Delete</button>
+        <button id="clearSelectionBtn" type="button" hidden>Deselect all</button>
+      </div>
       </div>
     </div>
     <aside id="featuresPanel" class="panel" aria-hidden="true">
@@ -145,8 +165,8 @@
       <h3>Objects and construction</h3>
       <ul>
         <li>Spawn furniture, appliances, basic shapes, and modular walls from the left catalog.</li>
-        <li>The floor is not selectable. Left-click toggles an object in or out of the selection. The Selected objects list has an <kbd>×</kbd> button for each item; <kbd>Esc</kbd> clears all.</li>
-        <li>Left-drag any selected object to move the whole selection. <kbd>R</kbd> rotates all selected objects 90° around their shared center; arrows nudge all by 10 cm.</li>
+        <li>The floor is not selectable. Left-click toggles an object in or out of the selection. The Selected objects list has an <kbd>×</kbd> button for each item; use Deselect all or <kbd>Esc</kbd> to clear the selection.</li>
+        <li>The second toolbar row shows the actions available for the current selection. Left-drag moves the selection; its arrows nudge by 10 cm and Rotate turns the group 90° around its shared center.</li>
         <li>For basic shapes, <kbd>E</kbd> sets elevation above the floor and <kbd>K</kbd> sets a uniform or X/Y/Z scale; Y is height.</li>
         <li><kbd>Delete</kbd> or <kbd>Backspace</kbd> removes the selected object. Movable walls affect walkthrough collision.</li>
         <li>Combine basic shapes and modular walls to create custom forms and rooms on the continuous ground plane.</li>
@@ -241,11 +261,7 @@
         <div class="selected-heading"><span>Selected objects</span><span id="selectedCount">0</span></div>
         <div id="selectedObjectList"><div class="empty-selection">No objects selected</div></div>
       </div>
-      <div class="selection-actions">
-        <button id="elevationBtn" disabled>Elevation (E)</button>
-        <button id="scaleBtn" disabled>Scale (K)</button>
-      </div>
-      <p class="help"><b>Select:</b> left-click toggles objects in or out; remove one with its X button above, or press Esc to clear all. Drag, R, arrows, and Delete affect the group.<br><b>Shapes:</b> E sets elevation; K sets X/Y/Z scale.<br><b>Camera:</b> right-drag rotates; middle-drag pans; wheel zooms.<br><b>Measure:</b> M then drag. Select its text and press T to rename.<br><b>Walk:</b> V, then WASD + mouse. Esc releases the mouse.<br><b>Everything:</b> open Features (H) for the complete guide.</p>
+      <p class="help"><b>Select:</b> left-click toggles objects in or out; remove one with its X button above or use Deselect all. Drag moves the group.<br><b>Actions:</b> the toolbar above shows available rotate, nudge, label, shape, and delete actions.<br><b>Camera:</b> right-drag rotates; middle-drag pans; wheel zooms.<br><b>Measure:</b> use Measure, then drag. Select its text to rename it.<br><b>Walk:</b> use Walk, then WASD + mouse. Esc releases the mouse.<br><b>Everything:</b> open Features for the complete guide.</p>
     </div>
     <div id="crosshair"></div>
     <div id="toast"></div>
