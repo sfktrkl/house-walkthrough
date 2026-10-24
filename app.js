@@ -140,11 +140,13 @@ function furniture(name, x, z, rotation, build) {
 }
 
 function drawTextSprite(sprite, text) {
+  sprite.userData.labelText = text;
   const canvas = document.createElement('canvas');
   canvas.width = 768; canvas.height = 240;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = 'rgba(15,18,18,.92)';
-  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 5;
+  const highlighted = sprite.userData.highlighted;
+  ctx.strokeStyle = highlighted ? '#ffdf00' : 'rgba(255,255,255,.45)'; ctx.lineWidth = highlighted ? 11 : 5;
   ctx.beginPath(); ctx.roundRect(8, 8, 752, 224, 28); ctx.fill(); ctx.stroke();
   const lines = String(text).split('\n').slice(0, 3);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -608,6 +610,11 @@ function isBasicShape(item) {
 
 function highlightObject(item, active) {
   item.traverse(o => {
+    if (o.isSprite && (o.userData.textSprite || o.userData.measurementLabel)) {
+      o.userData.highlighted = active;
+      drawTextSprite(o, o.userData.labelText || '');
+      return;
+    }
     if (!o.isMesh || !o.material.emissive) return;
     if (active) {
       if (o.userData.originalEmissive === undefined) o.userData.originalEmissive = o.material.emissive.getHex();
