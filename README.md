@@ -1,6 +1,6 @@
-# Compact home walkthrough
+# House Walkthrough Studio
 
-This is a local, real-scale 3D editor for designing a custom home layout.
+House Walkthrough Studio is a real-scale 3D editor for designing, measuring, furnishing, and exploring a custom home layout.
 
 ## Open it
 

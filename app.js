@@ -1,4 +1,6 @@
 const scene = new THREE.Scene();
+const STORAGE_KEY = 'house-walkthrough-studio-layout-v3';
+const LAYOUT_FORMAT = 'house-walkthrough-studio-layout';
 scene.background = new THREE.Color(0xdce8e4);
 scene.fog = new THREE.Fog(0xdce8e4, 24, 48);
 
@@ -248,7 +250,7 @@ table('Eight-seat dining table', -3.65, -.65, 2.05, .95, palette.wood);
 for (const [i,p] of [[1,[-4.35,-1.38]],[2,[-3.65,-1.38]],[3,[-2.95,-1.38]],[4,[-4.35,.08]],[5,[-3.65,.08]],[6,[-2.95,.08]],[7,[-4.85,-.65]],[8,[-2.45,-.65]]]) simpleChair(`Dining chair ${i}`, p[0], p[1], palette.cream, i<4?Math.PI:i<7?0:i===7?-Math.PI/2:Math.PI/2);
 cabinet('Living console', -6.05, -.55, 1.45, .38, .82, palette.wood, -Math.PI/2);
 
-// Compact separate kitchen: L-shaped worktop and full appliance set.
+// Separate kitchen: L-shaped worktop and full appliance set.
 cabinet('Kitchen counter north', -4.75, 4.95, 2.8, .58, .9, palette.cream);
 cabinet('Kitchen counter west', -6.05, 3.15, 3.1, .58, .9, palette.cream, Math.PI/2);
 cabinet('Fridge', -5.85, 4.65, .78, .72, 1.95, palette.metal);
@@ -753,7 +755,7 @@ function currentLayoutObjects() {
 }
 
 function saveLayout() {
-  localStorage.setItem('compact-home-layout-v2', JSON.stringify({ version:3, objects:currentLayoutObjects() }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version:3, objects:currentLayoutObjects() }));
 }
 
 function clearMovableObjects() {
@@ -800,15 +802,15 @@ async function exportLayout() {
   saveLayout();
   const summary = measurementSummary();
   const payload = JSON.stringify({
-    format: 'compact-home-layout', version: 3, measuredAreaM2:summary.area,
+    format: LAYOUT_FORMAT, version: 3, measuredAreaM2:summary.area,
     savedAt: new Date().toISOString(), objects: currentLayoutObjects()
   }, null, 2);
-  const filename = `house-layout-${new Date().toISOString().slice(0, 10)}.json`;
+  const filename = `house-walkthrough-studio-${new Date().toISOString().slice(0, 10)}.json`;
   try {
     if (window.showSaveFilePicker) {
       const handle = await window.showSaveFilePicker({
         suggestedName: filename,
-        types: [{ description: 'House layout', accept: { 'application/json': ['.json'] } }]
+        types: [{ description: 'House Walkthrough Studio layout', accept: { 'application/json': ['.json'] } }]
       });
       const writable = await handle.createWritable();
       await writable.write(payload); await writable.close();
@@ -844,7 +846,24 @@ async function importLayout(file) {
 }
 
 function restoreLayout() {
-  const raw = localStorage.getItem('compact-home-layout-v2'); if (!raw) return;
+  let raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    for (let index=0; index<localStorage.length; index++) {
+      const key = localStorage.key(index); if (!key || key === STORAGE_KEY) continue;
+      const candidate = localStorage.getItem(key);
+      try {
+        const parsed = JSON.parse(candidate);
+        const versionedLayout = parsed?.version === 3 && Array.isArray(parsed.objects);
+        const positionLayout = parsed && !Array.isArray(parsed) && Object.values(parsed).some(value =>
+          value && Number.isFinite(value.x) && Number.isFinite(value.z) && Number.isFinite(value.r)
+        );
+        if (versionedLayout || positionLayout) {
+          raw = candidate; localStorage.setItem(STORAGE_KEY, candidate); localStorage.removeItem(key); break;
+        }
+      } catch { /* Ignore unrelated browser storage. */ }
+    }
+  }
+  if (!raw) return;
   try {
     const state = JSON.parse(raw);
     if (state.version === 3 && Array.isArray(state.objects)) applyLayoutV3(state);
@@ -857,7 +876,7 @@ function resetLayout() {
   baseBlueprints.forEach(prototype => registerObject(cloneObject(prototype)));
   movable.forEach(o => { if (o.userData.kind === 'label' || o.userData.kind === 'measurement') o.visible = mode === 'plan'; });
   updateMeasuredAreaStats();
-  localStorage.removeItem('compact-home-layout-v2'); toast('Original layout restored');
+  localStorage.removeItem(STORAGE_KEY); toast('Original layout restored');
 }
 
 function editSelectedText() {
