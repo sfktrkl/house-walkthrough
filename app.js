@@ -522,6 +522,7 @@ orbit.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
 orbit.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
 const walk = new THREE.PointerLockControls(camera, renderer.domElement);
 let mode = 'plan';
+let wallCollisionBypassUntilClear = false;
 const keys = new Set();
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
@@ -600,7 +601,7 @@ function finishMeasurement() {
 }
 
 function planView() {
-  mode = 'plan'; walk.unlock(); orbit.enabled = true;
+  mode = 'plan'; wallCollisionBypassUntilClear = false; walk.unlock(); orbit.enabled = true;
   camera.position.set(0, 15.8, 9.5); orbit.target.set(0, 0, 0); orbit.update();
   movable.forEach(o => { if (o.userData.kind === 'label' || o.userData.kind === 'measurement') o.visible = true; });
   crosshair.style.display = 'none';
@@ -612,7 +613,10 @@ function planView() {
 function walkView() {
   setMeasureMode(false); mode = 'walk'; orbit.enabled = false;
   movable.forEach(o => { if (o.userData.kind === 'label' || o.userData.kind === 'measurement') o.visible = false; });
-  camera.position.set(0, 1.65, -4.65); camera.rotation.set(0, 0, 0);
+  const spawn = findWalkSpawn();
+  wallCollisionBypassUntilClear = !spawn;
+  camera.position.set(spawn?.x ?? 0, 1.65, spawn?.z ?? 0); camera.rotation.set(0, 0, 0);
+  if (!spawn) toast('Walk through the blocking wall to reach a clear area');
   walk.lock(); crosshair.style.display = 'block';
   document.querySelector('#walkBtn').classList.add('primary');
   document.querySelector('#planBtn').classList.remove('primary');
@@ -1192,6 +1196,13 @@ function playerCollides(pos) {
   });
 }
 
+function findWalkSpawn() {
+  const candidates = [];
+  for (let x=-6; x<=6; x+=.5) for (let z=-5; z<=5; z+=.5) candidates.push({ x, z });
+  candidates.sort((a,b) => a.x*a.x+a.z*a.z - (b.x*b.x+b.z*b.z));
+  return candidates.find(point => !playerCollides(point)) || null;
+}
+
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
@@ -1200,7 +1211,10 @@ function animate() {
     const old=camera.position.clone(); const speed=2.4*dt;
     if(keys.has('KeyW')) walk.moveForward(speed); if(keys.has('KeyS')) walk.moveForward(-speed);
     if(keys.has('KeyA')) walk.moveRight(-speed); if(keys.has('KeyD')) walk.moveRight(speed);
-    camera.position.y=1.65; if(playerCollides(camera.position)) camera.position.copy(old);
+    camera.position.y=1.65;
+    if (wallCollisionBypassUntilClear) {
+      if (!playerCollides(camera.position)) wallCollisionBypassUntilClear = false;
+    } else if (playerCollides(camera.position)) camera.position.copy(old);
   } else if(mode==='plan') { orbit.update(); }
   renderer.render(scene,camera);
 }
