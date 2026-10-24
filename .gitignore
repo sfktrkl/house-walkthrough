@@ -1,0 +1,4 @@
+.firefox-qa/
+.*-qa/
+*-qa.png
+preview*.png

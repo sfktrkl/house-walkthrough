@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compact Home Study</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ink: #f7f4ed;
+      --muted: #b7b4aa;
+      --panel: rgba(20, 22, 22, .90);
+      --line: rgba(255,255,255,.13);
+      --accent: #ffb85c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #131817; color: var(--ink); }
+    canvas { display: block; }
+    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+    .topbar {
+      position: absolute; top: 18px; left: 18px; right: 18px;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    }
+    .brand, .panel {
+      background: var(--panel); border: 1px solid var(--line); box-shadow: 0 14px 45px rgba(0,0,0,.24);
+      backdrop-filter: blur(16px); border-radius: 16px;
+    }
+    .brand { padding: 13px 16px; }
+    .brand small { display:block; color: var(--accent); font-weight: 750; letter-spacing: .11em; text-transform: uppercase; font-size: 10px; }
+    .brand h1 { font-size: 18px; margin: 4px 0 2px; letter-spacing: -.02em; }
+    .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+    .actions { display:flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; pointer-events: auto; }
+    button {
+      border: 1px solid var(--line); color: var(--ink); background: rgba(28,31,31,.94);
+      padding: 10px 13px; border-radius: 12px; font-weight: 700; cursor: pointer;
+    }
+    button:hover { border-color: rgba(255,184,92,.65); }
+    button.primary { background: var(--accent); color: #20170c; border-color: transparent; }
+    .panel { position: absolute; right: 18px; bottom: 18px; width: min(340px, calc(100vw - 36px)); padding: 14px; }
+    .panel h2 { font-size: 13px; margin: 0 0 10px; }
+    .stats { display:grid; grid-template-columns: 2fr 1fr; gap: 7px; margin-bottom: 11px; }
+    .stat { padding: 9px; border-radius: 11px; background: rgba(255,255,255,.055); }
+    .stat strong { display:block; font-size: 16px; }
+    .stat span { color:var(--muted); font-size:10px; }
+    #selection { color: var(--accent); font-size: 12px; min-height: 18px; }
+    .selection-actions { display:flex; gap:7px; margin:7px 0 3px; pointer-events:auto; }
+    .selection-actions button { flex:1; padding:8px 9px; font-size:10px; }
+    .selection-actions button:disabled { opacity:.38; cursor:not-allowed; }
+    .help { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
+    #catalog {
+      position: absolute; left: 18px; top: 108px; bottom: 18px; width: 250px;
+      padding: 13px; overflow-y: auto; pointer-events: auto;
+      scrollbar-width: thin; scrollbar-color: rgba(255,184,92,.5) transparent;
+    }
+    #catalog h2 { margin: 0 0 5px; font-size: 14px; }
+    #catalog .catalog-note { margin: 0 0 12px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .catalog-group { margin-top: 13px; }
+    .catalog-group h3 { margin: 0 0 7px; color: var(--accent); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; }
+    .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .catalog-grid button { padding: 8px 7px; border-radius: 9px; font-size: 10px; line-height: 1.2; }
+    #featuresPanel {
+      top: 70px; right: 18px; bottom: auto; width: min(460px, calc(100vw - 36px));
+      max-height: calc(100vh - 90px); overflow-y: auto; display: none; pointer-events: auto;
+      z-index: 5; scrollbar-width: thin; scrollbar-color: rgba(255,184,92,.5) transparent;
+    }
+    #featuresPanel.open { display: block; }
+    #featuresPanel h2 { color: var(--accent); font-size: 15px; }
+    #featuresPanel h3 { margin: 13px 0 6px; font-size: 10px; color: var(--accent); letter-spacing: .09em; text-transform: uppercase; }
+    #featuresPanel ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    #featuresPanel li + li { margin-top: 4px; }
+    kbd { padding: 1px 5px; border: 1px solid var(--line); border-bottom-color: rgba(255,255,255,.3); border-radius: 5px; background: rgba(255,255,255,.07); color: var(--ink); font: 700 10px/1.5 inherit; }
+    #crosshair { position:absolute; left:50%; top:50%; width:10px; height:10px; transform:translate(-50%,-50%); display:none; }
+    #crosshair::before, #crosshair::after { content:""; position:absolute; background:white; opacity:.7; }
+    #crosshair::before { width:10px; height:1px; top:4px; }
+    #crosshair::after { width:1px; height:10px; left:4px; }
+    #toast { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); padding:10px 14px; border-radius:12px; background:var(--panel); font-size:12px; opacity:0; transition:opacity .2s; }
+    #toast.show { opacity:1; }
+    @media (max-width: 720px) {
+      .topbar { flex-direction:column; }
+      .actions { justify-content:flex-start; }
+      .brand p { display:none; }
+      .panel { width: calc(100vw - 36px); }
+      #catalog { top: 170px; width: 210px; bottom: 170px; }
+    }
+  </style>
+  <script src="./vendor/three.min.js"></script>
+  <script src="./vendor/OrbitControls.global.js"></script>
+  <script src="./vendor/PointerLockControls.global.js"></script>
+  <script>
+    window.addEventListener('error', event => {
+      const box = document.createElement('pre');
+      box.style.cssText = 'position:fixed;left:20px;bottom:20px;z-index:99;max-width:70vw;padding:14px;background:#5b1717;color:white;white-space:pre-wrap';
+      box.textContent = `3D error: ${event.message}\n${event.filename || ''}:${event.lineno || ''}`;
+      document.body.append(box);
+    });
+    window.addEventListener('unhandledrejection', event => {
+      const box = document.createElement('pre');
+      box.style.cssText = 'position:fixed;left:20px;bottom:20px;z-index:99;max-width:70vw;padding:14px;background:#5b1717;color:white;white-space:pre-wrap';
+      box.textContent = `3D error: ${event.reason?.stack || event.reason}`;
+      document.body.append(box);
+    });
+  </script>
+</head>
+<body>
+  <div id="boot" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;color:#b7b4aa;font-weight:700">Loading 3D house…</div>
+  <div id="hud">
+    <div class="topbar">
+      <div class="brand">
+        <small>Custom layout editor</small>
+        <h1>Build-your-own home study</h1>
+        <p>Real scale: 1 world unit = 1 metre</p>
+      </div>
+      <div class="actions">
+        <button id="planBtn" class="primary">Plan (P)</button>
+        <button id="walkBtn">Walk (V)</button>
+        <button id="measureBtn">Measure (M)</button>
+        <button id="rotateBtn">Rotate (R)</button>
+        <button id="editTextBtn">Edit label (T)</button>
+        <button id="deleteBtn">Delete (Del)</button>
+        <button id="saveBtn">Save (Ctrl+S)</button>
+        <button id="loadBtn">Load (Ctrl+O)</button>
+        <button id="resetBtn">Reset (0)</button>
+        <button id="helpBtn">Features (H)</button>
+      </div>
+    </div>
+    <aside id="featuresPanel" class="panel" aria-hidden="true">
+      <h2>Features & keyboard shortcuts</h2>
+      <h3>Views and camera</h3>
+      <ul>
+        <li><kbd>P</kbd> floor-plan editing view; <kbd>V</kbd> first-person walkthrough.</li>
+        <li>In plan view: right-drag to rotate the camera, middle-drag to pan, and use the wheel to zoom.</li>
+        <li>In walk view: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move, mouse to look, <kbd>Esc</kbd> to release the mouse.</li>
+      </ul>
+      <h3>Objects and construction</h3>
+      <ul>
+        <li>Spawn furniture, appliances, basic shapes, and modular walls from the left catalog.</li>
+        <li>The floor is not selectable. Left-click adds an object to the selection; a short right-click removes it. <kbd>Esc</kbd> clears all.</li>
+        <li>Left-drag any selected object to move the whole selection. <kbd>R</kbd> rotates all selected objects 90° around their shared center; arrows nudge all by 10 cm.</li>
+        <li>For basic shapes, <kbd>E</kbd> sets elevation above the floor and <kbd>K</kbd> sets a uniform or X/Y/Z scale; Y is height.</li>
+        <li><kbd>Delete</kbd> or <kbd>Backspace</kbd> removes the selected object. Movable walls affect walkthrough collision.</li>
+        <li>Combine basic shapes and modular walls to create custom forms and rooms on the continuous ground plane.</li>
+      </ul>
+      <h3>Labels and measurements</h3>
+      <ul>
+        <li>Spawn, move, rotate, and delete custom text labels. <kbd>T</kbd> edits one selected text or measurement label.</li>
+        <li><kbd>M</kbd> starts room measurement; drag a rectangle to calculate m² with 10 cm snapping. The live total sums all current measurements.</li>
+        <li>A finished measurement shows only its non-blocking text label. Select one and press <kbd>T</kbd> to rename only its room name; dimensions and area stay unchanged.</li>
+        <li><kbd>Esc</kbd> cancels an unfinished measurement.</li>
+      </ul>
+      <h3>Saving</h3>
+      <ul>
+        <li>Changes are autosaved locally, including spawned/deleted objects, labels, measurements, and positions.</li>
+        <li><kbd>Ctrl</kbd>+<kbd>S</kbd> exports a JSON layout; <kbd>Ctrl</kbd>+<kbd>O</kbd> imports one.</li>
+        <li><kbd>0</kbd> restores the original house and removes spawned objects.</li>
+        <li><kbd>H</kbd> opens or closes this complete feature guide.</li>
+      </ul>
+    </aside>
+    <aside id="catalog" class="panel">
+      <h2>Object catalog</h2>
+      <p class="catalog-note">Click an item to place it at the house centre, then drag it into position.</p>
+      <div class="catalog-group">
+        <h3>Labels</h3>
+        <div class="catalog-grid"><button data-spawn="textLabel">Text label</button></div>
+      </div>
+      <div class="catalog-group">
+        <h3>Basic / arbitrary shapes</h3>
+        <div class="catalog-grid">
+          <button data-spawn="shapeSquare">Square block 1 x 1</button><button data-spawn="shapeRectangle">Rectangle block 2 x 1</button>
+          <button data-spawn="shapeCircle">Round block 1 m</button><button data-spawn="shapeTriangle">Triangle block 1 m</button>
+          <button data-spawn="shapeCube">Cube 1 m</button><button data-spawn="shapeBox">Box 2 x 1</button>
+          <button data-spawn="shapeCylinder">Cylinder</button><button data-spawn="shapeSphere">Sphere</button>
+        </div>
+      </div>
+      <div class="catalog-group">
+        <h3>Living & dining</h3>
+        <div class="catalog-grid">
+          <button data-spawn="sofa3">3-seat sofa</button><button data-spawn="sofa2">2-seat sofa</button>
+          <button data-spawn="armchair">Armchair</button><button data-spawn="diningChair">Dining chair</button>
+          <button data-spawn="diningTable">Dining table</button><button data-spawn="coffeeTable">Coffee table</button>
+          <button data-spawn="tv75">75-inch TV</button><button data-spawn="tvConsole">TV console</button>
+          <button data-spawn="sideboard">Sideboard</button>
+        </div>
+      </div>
+      <div class="catalog-group">
+        <h3>Office & library</h3>
+        <div class="catalog-grid">
+          <button data-spawn="desk160">Desk 1.6 m</button><button data-spawn="desk180">Desk 1.8 m</button>
+          <button data-spawn="officeChair">Office chair</button><button data-spawn="bookshelfSmall">Bookcase 1.5 m</button>
+          <button data-spawn="bookshelfLarge">Bookcase 3.0 m</button><button data-spawn="drawers">Drawers</button>
+        </div>
+      </div>
+      <div class="catalog-group">
+        <h3>Bedroom & music</h3>
+        <div class="catalog-grid">
+          <button data-spawn="bed180">Bed 180 x 220</button><button data-spawn="wardrobe4">4-door wardrobe</button>
+          <button data-spawn="bedside">Bedside table</button><button data-spawn="piano">Digital piano</button>
+          <button data-spawn="pianoBench">Piano bench</button><button data-spawn="guitar">Guitar</button>
+        </div>
+      </div>
+      <div class="catalog-group">
+        <h3>Kitchen, bath & utility</h3>
+        <div class="catalog-grid">
+          <button data-spawn="baseCabinet">Base cabinet</button><button data-spawn="fridge">Fridge</button>
+          <button data-spawn="sink">Sink</button><button data-spawn="toilet">Toilet</button>
+          <button data-spawn="shower">Shower</button><button data-spawn="washer">Washer / dryer</button>
+        </div>
+      </div>
+      <div class="catalog-group">
+        <h3>Walls · 14 cm thick</h3>
+        <div class="catalog-grid">
+          <button data-spawn="wall05">Wall 0.5 m</button><button data-spawn="wall1">Wall 1 m</button>
+          <button data-spawn="wall2">Wall 2 m</button><button data-spawn="wall3">Wall 3 m</button>
+          <button data-spawn="wall4">Wall 4 m</button>
+        </div>
+      </div>
+    </aside>
+    <div class="panel">
+      <h2>Measured space</h2>
+      <div class="stats">
+        <div class="stat"><strong id="totalMeasuredArea">0.0 m²</strong><span>total measured area</span></div>
+        <div class="stat"><strong id="measurementCount">0</strong><span>measured rooms</span></div>
+      </div>
+      <div id="selection">No object selected</div>
+      <div class="selection-actions">
+        <button id="elevationBtn" disabled>Elevation (E)</button>
+        <button id="scaleBtn" disabled>Scale (K)</button>
+      </div>
+      <p class="help"><b>Select:</b> left-click adds; short right-click removes; Esc clears. Drag, R, arrows, and Delete affect the group.<br><b>Shapes:</b> E sets elevation; K sets X/Y/Z scale.<br><b>Camera:</b> right-drag rotates; middle-drag pans; wheel zooms.<br><b>Measure:</b> M then drag. Select its text and press T to rename.<br><b>Walk:</b> V, then WASD + mouse. Esc releases the mouse.<br><b>Everything:</b> open Features (H) for the complete guide.</p>
+    </div>
+    <div id="crosshair"></div>
+    <div id="toast"></div>
+  </div>
+  <input id="loadInput" type="file" accept="application/json,.json" hidden>
+  <script src="./app.js"></script>
+</body>
+</html>
