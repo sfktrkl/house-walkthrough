@@ -1,31 +1,42 @@
 # House Walkthrough Studio
 
-House Walkthrough Studio is a real-scale 3D editor for designing, measuring, furnishing, and exploring a custom home layout.
+A browser-based 3D home planner for arranging furniture, shaping a floor plan, measuring rooms, and walking through the layout at full scale.
 
-## Open it
+![House Walkthrough Studio preview](preview.png)
 
-Double-click `index.html` and open it with Firefox. The project is self-contained and does not need an internet connection.
+## Run the planner
 
-## Live area tracking
+Open `index.html` in Firefox or another modern browser. The project includes its 3D engine locally and works without a build step or external service.
 
-There is no fixed house-size claim because the walls are editable. The **Measured space** panel sums the area of all room-measurement rectangles currently in the layout and shows their count. A large continuous ground plane covers the workspace; the supplied plan and furniture are only a movable starting example.
+## What you can do
+
+- Arrange the example home or start from a blank plan.
+- Add furniture, appliances, labels, modular walls, and editable basic shapes from the catalog.
+- Select and move several objects together, rotate them around their shared center, and adjust shape color, scale, or elevation.
+- Draw room measurements in square meters and see the combined measured area and room count in the Workspace panel.
+- Switch between floor-plan editing and first-person walkthrough mode.
+- Save and load layouts as JSON files; changes are also saved in the browser's local storage.
+
+The example arrangement is a starting point. Walls and objects can be moved, and the measured total comes only from the room measurements you draw.
 
 ## Controls
 
-- **Feature guide:** press `H` or use **Features (H)** for the complete in-app feature and shortcut list.
-- **Floor plan / edit:** press `P`; right-drag to rotate the camera, middle-drag to pan, and scroll to zoom. Left-drag is reserved for moving objects, and the continuous floor is not selectable.
-- **Add objects:** use the left catalog to add furniture, combinable basic shapes, modular walls, or text labels at the centre of the plan.
-- **Multi-select and move:** left-click toggles an object in or out of the selection, and `Esc` clears the selection. Drag a selected object to move the entire group anywhere on the continuous ground plane.
-- **Rotate:** press `R` to rotate all selected objects 90° around their shared center.
-- **Stack and scale shapes:** select one or more basic shapes, then press `E` to set their elevation above the floor or `K` to enter a uniform or X/Y/Z scale. Y controls height.
-- **Delete:** select an object and press `Delete` / `Backspace`, or use **Delete selected**.
-- **Edit text:** select exactly one text or measurement label and press `T`, or use **Edit label**.
-- **Measure a room:** choose **Measure room**, then drag a rectangle over the plan. Its area is calculated in m² at real scale. Only the finished text label remains, so measurements do not block object selection.
-- **Pan the plan camera:** middle-drag on the 3D view.
-- **Fine adjustment:** arrow keys move the selected item in 10 cm steps.
-- **Walk inside:** press `V`, then use `W A S D` and the mouse. Press `Esc` to release the pointer.
-- **Reset layout:** press `0` to remove spawned objects and restore the initial arrangement.
-- **Save layout:** press `Ctrl+S` to write the current arrangement to a JSON file. Firefox downloads it; browsers supporting the File System Access API show a Save dialog.
-- **Load layout:** press `Ctrl+O` to choose a previously saved JSON file and restore that arrangement.
+| Action | Control |
+| --- | --- |
+| Floor-plan editing / walkthrough | `P` / `V` |
+| Rotate camera / pan camera | Right-drag / middle-drag |
+| Zoom | Mouse wheel |
+| Select or deselect an object | Left-click |
+| Move selected objects | Left-drag |
+| Move selected objects by 10 cm | Arrow keys |
+| Rotate selected objects | `R` |
+| Set object elevation / scale | `E` / `K` |
+| Edit a selected text or room label | `T` |
+| Delete selected objects | `Delete` or `Backspace` |
+| Measure a room | `M`, then drag a rectangle |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Y` (`Ctrl+Shift+Z` also redoes) |
+| Save / load a layout | `Ctrl+S` / `Ctrl+O` |
+| Reset the example layout | `0` |
+| Open the full feature guide | `H` |
 
-All object positions, spawned duplicates, labels, and deletions are saved automatically in browser local storage.
+In walkthrough mode, use `W`, `A`, `S`, and `D` to move and the mouse to look around. Press `Esc` to release the mouse.
