@@ -12,15 +12,15 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = .82;
+renderer.toneMappingExposure = .68;
 renderer.setClearColor(0xdce8e4, 1);
 document.body.prepend(renderer.domElement);
 document.querySelector('#boot')?.remove();
 
 // Uniform daylight keeps the freely editable workspace readable without placed light objects.
-scene.add(new THREE.AmbientLight(0xfffbf2, .48));
-scene.add(new THREE.HemisphereLight(0xf8fbff, 0x7b867f, .72));
-const sun = new THREE.DirectionalLight(0xfff0d1, 1.05);
+scene.add(new THREE.AmbientLight(0xfffbf2, .24));
+scene.add(new THREE.HemisphereLight(0xf8fbff, 0x7b867f, .40));
+const sun = new THREE.DirectionalLight(0xfff0d1, .56);
 sun.position.set(-8, 13, -6);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -28,7 +28,7 @@ sun.shadow.camera.left = sun.shadow.camera.bottom = -12;
 sun.shadow.camera.right = sun.shadow.camera.top = 12;
 sun.shadow.bias = -.00025;
 scene.add(sun);
-const skyFill = new THREE.DirectionalLight(0xcfe5ff, .18);
+const skyFill = new THREE.DirectionalLight(0xcfe5ff, .04);
 skyFill.position.set(8, 7, 7);
 scene.add(skyFill);
 
@@ -37,14 +37,14 @@ const palette = {
   blue: 0x4f7180, green: 0x617866, rust: 0xa5573e, cream: 0xd8c6a7,
   black: 0x252827, metal: 0x737a78, glass: 0x80b8c5, white: 0xf5f2e9,
 };
-const material = (color, roughness = .9, metalness = 0) =>
+const material = (color, roughness = 1, metalness = 0) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness });
 
 const movable = [];
 const baseBlueprints = new Map();
 let spawnSerial = 0;
 let wallSerial = 0;
-const wallMat = material(palette.wall, .92);
+const wallMat = material(palette.wall, 1);
 const floorRoot = new THREE.Group();
 const wallRoot = new THREE.Group();
 const furnitureRoot = new THREE.Group();
