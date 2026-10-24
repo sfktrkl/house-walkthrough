@@ -1,6 +1,11 @@
 const scene = new THREE.Scene();
 const STORAGE_KEY = 'house-walkthrough-studio-layout-v3';
 const LAYOUT_FORMAT = 'house-walkthrough-studio-layout';
+const undoHistory = [];
+const redoHistory = [];
+const HISTORY_LIMIT = 100;
+let lastHistorySnapshot = null;
+let restoringHistory = false;
 scene.background = new THREE.Color(0xdce8e4);
 scene.fog = new THREE.Fog(0xdce8e4, 24, 48);
 
@@ -818,8 +823,70 @@ function currentLayoutObjects() {
   }));
 }
 
+function layoutSnapshot() {
+  return JSON.stringify(currentLayoutObjects());
+}
+
+function updateHistoryButtons() {
+  document.querySelector('#undoBtn').disabled = undoHistory.length === 0;
+  document.querySelector('#redoBtn').disabled = redoHistory.length === 0;
+}
+
+function recordHistoryChange(snapshot) {
+  if (lastHistorySnapshot === null) {
+    lastHistorySnapshot = snapshot;
+  } else if (snapshot !== lastHistorySnapshot) {
+    undoHistory.push(lastHistorySnapshot);
+    if (undoHistory.length > HISTORY_LIMIT) undoHistory.shift();
+    redoHistory.length = 0;
+    lastHistorySnapshot = snapshot;
+  }
+  updateHistoryButtons();
+}
+
+function initializeLayoutHistory() {
+  undoHistory.length = 0;
+  redoHistory.length = 0;
+  lastHistorySnapshot = layoutSnapshot();
+  updateHistoryButtons();
+}
+
 function saveLayout() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version:3, objects:currentLayoutObjects() }));
+  const objects = currentLayoutObjects();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version:3, objects }));
+  if (!restoringHistory) recordHistoryChange(JSON.stringify(objects));
+}
+
+function restoreHistorySnapshot(snapshot) {
+  const selectedIds = [...selectedItems].map(item => item.userData.objectId);
+  restoringHistory = true;
+  try {
+    applyLayoutV3({ objects:JSON.parse(snapshot) });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version:3, objects:currentLayoutObjects() }));
+    const objectsById = new Map(movable.map(item => [item.userData.objectId, item]));
+    selectedItems.clear();
+    selectedIds.forEach(id => {
+      const item = objectsById.get(id);
+      if (item) { selectedItems.add(item); highlightObject(item, true); }
+    });
+    lastHistorySnapshot = layoutSnapshot();
+    refreshSelectionUI();
+  } finally {
+    restoringHistory = false;
+    updateHistoryButtons();
+  }
+}
+
+function undoLayout() {
+  if (!undoHistory.length) return;
+  redoHistory.push(lastHistorySnapshot);
+  restoreHistorySnapshot(undoHistory.pop());
+}
+
+function redoLayout() {
+  if (!redoHistory.length) return;
+  undoHistory.push(lastHistorySnapshot);
+  restoreHistorySnapshot(redoHistory.pop());
 }
 
 function clearMovableObjects() {
@@ -940,7 +1007,9 @@ function resetLayout() {
   baseBlueprints.forEach(prototype => registerObject(cloneObject(prototype)));
   movable.forEach(o => { if (o.userData.kind === 'label' || o.userData.kind === 'measurement') o.visible = mode === 'plan'; });
   updateMeasuredAreaStats();
-  localStorage.removeItem(STORAGE_KEY); toast('Original layout restored');
+  localStorage.removeItem(STORAGE_KEY);
+  recordHistoryChange(layoutSnapshot());
+  toast('Original layout restored');
 }
 
 function editSelectedText() {
@@ -1007,6 +1076,8 @@ document.querySelector('#measureBtn').addEventListener('click', () => {
   setMeasureMode(!measureMode);
 });
 document.querySelector('#rotateBtn').addEventListener('click', rotateSelected);
+document.querySelector('#undoBtn').addEventListener('click', undoLayout);
+document.querySelector('#redoBtn').addEventListener('click', redoLayout);
 document.querySelector('#editTextBtn').addEventListener('click', editSelectedText);
 document.querySelector('#deleteBtn').addEventListener('click', deleteSelection);
 document.querySelector('#elevationBtn').addEventListener('click', setShapeElevation);
@@ -1038,6 +1109,12 @@ document.querySelectorAll('[data-spawn]').forEach(button => button.addEventListe
   if (object) saveLayout();
 }));
 addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
+    e.preventDefault();
+    if (e.shiftKey) redoLayout(); else undoLayout();
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY') { e.preventDefault(); redoLayout(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); exportLayout(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyO') { e.preventDefault(); document.querySelector('#loadInput').click(); return; }
   if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
@@ -1097,5 +1174,5 @@ function animate() {
   renderer.render(scene,camera);
 }
 
-restoreLayout(); updateMeasuredAreaStats(); planView(); animate();
+restoreLayout(); initializeLayoutHistory(); updateMeasuredAreaStats(); planView(); animate();
 addEventListener('resize', () => { camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });

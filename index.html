@@ -44,6 +44,7 @@
       padding: 10px 13px; border-radius: 12px; font-weight: 700; cursor: pointer;
     }
     button:hover { border-color: rgba(255,184,92,.65); }
+    button:disabled { opacity:.38; cursor:not-allowed; }
     button.primary { background: var(--accent); color: #20170c; border-color: transparent; }
     .panel { position: absolute; right: 18px; bottom: 18px; width: min(340px, calc(100vw - 36px)); max-height: calc(100vh - 36px); overflow-y: auto; padding: 14px; scrollbar-width: thin; scrollbar-color: rgba(255,184,92,.5) transparent; }
     .panel h2 { font-size: 13px; margin: 0 0 10px; }
@@ -131,6 +132,8 @@
         <button id="planBtn" class="primary">Plan (P)</button>
         <button id="walkBtn">Walk (V)</button>
         <button id="measureBtn">Measure (M)</button>
+        <button id="undoBtn" type="button" title="Undo last layout change (Ctrl+Z)" disabled>Undo (Ctrl+Z)</button>
+        <button id="redoBtn" type="button" title="Redo layout change (Ctrl+Y or Ctrl+Shift+Z)" disabled>Redo (Ctrl+Y)</button>
         <button id="saveBtn">Save (Ctrl+S)</button>
         <button id="loadBtn">Load (Ctrl+O)</button>
         <button id="resetBtn">Reset (0)</button>
@@ -181,6 +184,7 @@
       <h3>Saving</h3>
       <ul>
         <li>Changes are autosaved locally, including spawned/deleted objects, labels, measurements, and positions.</li>
+        <li>Undo and Redo buttons track up to 100 layout changes in the current session. Use <kbd>Ctrl</kbd>+<kbd>Z</kbd> to undo, <kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> to redo.</li>
         <li><kbd>Ctrl</kbd>+<kbd>S</kbd> exports a JSON layout; <kbd>Ctrl</kbd>+<kbd>O</kbd> imports one.</li>
         <li><kbd>0</kbd> restores the original house and removes spawned objects.</li>
         <li><kbd>H</kbd> opens or closes this complete feature guide.</li>
