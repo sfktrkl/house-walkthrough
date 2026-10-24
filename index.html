@@ -26,11 +26,12 @@
       background: var(--panel); border: 1px solid var(--line); box-shadow: 0 14px 45px rgba(0,0,0,.24);
       backdrop-filter: blur(16px); border-radius: 16px;
     }
-    .brand { padding: 13px 16px; }
+    .brand { width: min(375px, calc(100vw - 36px)); padding: 13px 16px; flex: 0 0 auto; }
     .brand small { display:block; color: var(--accent); font-weight: 750; letter-spacing: .11em; text-transform: uppercase; font-size: 10px; }
     .brand h1 { font-size: 18px; margin: 4px 0 2px; letter-spacing: -.02em; }
     .brand p { margin: 0; color: var(--muted); font-size: 12px; }
     .actions { display:flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; pointer-events: auto; }
+    .actions button { padding: 9px 10px; font-size: 11px; }
     button {
       border: 1px solid var(--line); color: var(--ink); background: rgba(28,31,31,.94);
       padding: 10px 13px; border-radius: 12px; font-weight: 700; cursor: pointer;
@@ -49,7 +50,7 @@
     .selection-actions button:disabled { opacity:.38; cursor:not-allowed; }
     .help { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
     #catalog {
-      position: absolute; left: 18px; top: 108px; bottom: 18px; width: 250px;
+      position: absolute; left: 18px; top: 108px; bottom: 18px; width: min(375px, calc(100vw - 36px));
       padding: 13px; overflow-y: auto; pointer-events: auto;
       scrollbar-width: thin; scrollbar-color: rgba(255,184,92,.5) transparent;
     }
@@ -81,7 +82,7 @@
       .actions { justify-content:flex-start; }
       .brand p { display:none; }
       .panel { width: calc(100vw - 36px); }
-      #catalog { top: 170px; width: 210px; bottom: 170px; }
+      #catalog { top: 170px; width: min(315px, calc(100vw - 36px)); bottom: 170px; }
     }
   </style>
   <script src="./vendor/three.min.js"></script>
