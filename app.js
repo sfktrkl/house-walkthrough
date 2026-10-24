@@ -131,19 +131,6 @@ wall(3.6, -1.3, 5.8, .14); wall(3.6, .8, 5.8, .14);
 // The 90 cm opening between these two segments is the bathroom doorway.
 wall(2.45, -.85, .14, .7); wall(2.45, .55, .14, .3);
 
-// Window markers make exterior openings legible without adding rendering cost.
-function windowPanel(x, y, z, w, h, rotation = 0) {
-  const frame = meshBox(w + .08, h + .08, .045, palette.darkWood, x, y, z, wallRoot);
-  frame.rotation.y = rotation;
-  const glass = meshBox(w, h, .052, palette.glass, x, y, z - .006, wallRoot);
-  glass.rotation.y = rotation;
-}
-windowPanel(-3.6, 1.55, -5.405, 2.4, 1.25);
-windowPanel(3.7, 1.55, -5.405, 2.0, 1.25);
-windowPanel(-4.8, 1.55, 5.405, 1.8, 1.25);
-windowPanel(-1.9, 1.55, 5.405, 1.3, 1.25);
-windowPanel(3.6, 1.55, 5.405, 2.4, 1.25);
-
 function furniture(name, x, z, rotation, build) {
   const group = new THREE.Group();
   group.name = name; group.position.set(x, 0, z); group.rotation.y = rotation;
