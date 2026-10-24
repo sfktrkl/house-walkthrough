@@ -123,7 +123,7 @@ wall(0, 5.3, 13.0, .2); wall(-6.5, 0, .2, 10.8); wall(6.5, 0, .2, 10.8);
 wall(-.65, -3.25, .14, 4.1); wall(-.65, -.05, .14, .3);
 wall(-.65, 1.4, .14, .2); wall(-.65, 4.1, .14, 2.4);
 // Right wing / main hall, with bedroom, foyer and studio openings.
-wall(.7, -3.7, .14, 3.2); wall(.7, -1.0, .14, .45);
+wall(.7, -2.9, .14, 3.2); wall(.7, -1.0, .14, .45);
 wall(.7, 1.25, .14, .7); wall(.7, 4.15, .14, 2.3);
 // Left cross hall and north rooms.
 wall(-4.75, .1, 3.5, .14); wall(-1.45, .1, 1.45, .14);
@@ -240,7 +240,7 @@ function vanity(name, x, z, rotation = 0) {
   return furniture(name, x, z, rotation, g => {
     meshBox(1.15,.08,.48,palette.wood,0,.75,0,g);
     for (const sx of [-.48,.48]) meshBox(.07,.72,.42,palette.darkWood,sx,.36,0,g);
-    meshBox(.78,.58,.035,palette.glass,0,1.08,.19,g);
+    meshBox(.78,.58,.035,palette.glass,0,1.08,-.19,g);
   });
 }
 
@@ -257,17 +257,17 @@ function bookshelf(name, x, z, w, h = 2.2, rotation = 0) {
 // Living + dining: 3-seat, 2-seat, two armchairs, 75-inch TV, table for eight and console.
 sofa('Three-seat sofa', -3.6, -2.65, 2.35, palette.green, 0);
 sofa('Two-seat sofa', -5.5, -3.15, 1.65, palette.blue, -Math.PI/2);
-simpleChair('Armchair 1', -1.5, -2.15, palette.rust, Math.PI/2);
-simpleChair('Armchair 2', -1.5, -3.25, palette.rust, Math.PI/2);
+simpleChair('Armchair 1', -1.8, -2.15, palette.rust, Math.PI/2);
+simpleChair('Armchair 2', -1.8, -3.25, palette.rust, Math.PI/2);
 cabinet('TV console', -3.55, -4.9, 2.1, .38, .46, palette.darkWood);
 furniture('75-inch TV', -3.55, -5.02, 0, g => meshBox(1.67, .96, .05, palette.black, 0, 1.18, 0, g));
-table('Eight-seat dining table', -3.65, -.65, 2.05, .95, palette.wood);
-for (const [i,p] of [[1,[-4.43,-1.65]],[2,[-3.65,-1.65]],[3,[-2.87,-1.65]],[4,[-4.43,.25]],[5,[-3.65,.25]],[6,[-2.87,.25]],[7,[-5.2,-.65]],[8,[-2.1,-.65]]]) simpleChair(`Dining chair ${i}`, p[0], p[1], palette.cream, i<4?Math.PI:i<7?0:i===7?-Math.PI/2:Math.PI/2);
+table('Eight-seat dining table', -3.65, -.8, 2.05, .95, palette.wood);
+for (const [i,p] of [[1,[-4.43,-1.8]],[2,[-3.65,-1.8]],[3,[-2.87,-1.8]],[4,[-4.43,-.4]],[5,[-3.65,-.4]],[6,[-2.87,-.4]],[7,[-5.2,-.8]],[8,[-2.1,-.8]]]) simpleChair(`Dining chair ${i}`, p[0], p[1], palette.cream, i<4?Math.PI:i<7?0:i===7?-Math.PI/2:Math.PI/2);
 cabinet('Living console', -6.05, -.55, 1.45, .38, .82, palette.wood, -Math.PI/2);
 
 // Separate kitchen: L-shaped worktop and full appliance set.
-cabinet('Kitchen counter north', -4.75, 4.95, 2.8, .58, .9, palette.cream);
-cabinet('Kitchen counter west', -6.05, 3.15, 3.1, .58, .9, palette.cream, Math.PI/2);
+cabinet('Kitchen counter north', -4.75, 4.9, 2.8, .58, .9, palette.cream);
+cabinet('Kitchen counter west', -6.05, 3.15, 3.1, .58, .9, palette.cream, -Math.PI/2);
 cabinet('Fridge', -3.95, 3.55, .78, .72, 1.95, palette.metal, Math.PI/2);
 cabinet('Oven', -5.47, 3.55, .62, .58, .9, palette.black, -Math.PI/2);
 cabinet('Dishwasher', -5.47, 2.35, .62, .58, .9, palette.metal, -Math.PI/2);
@@ -277,10 +277,10 @@ furniture('Sink', -3.75, 4.88, 0, g => meshBox(.7,.04,.42,palette.metal,0,.94,0,
 desk('Small office desk 1.6 m', -2.05, 4.65, 1.6);
 simpleChair('Small office chair', -2.05, 3.82, palette.blue, Math.PI);
 cabinet('Office drawers', -3.05, 2.0, .8, .48, 1.0, palette.wood, -Math.PI/2);
-bookshelf('Small library', -3.27, 3.35, 1.55, 1.8, Math.PI/2);
+bookshelf('Small library', -.92, 3.8, 1.55, 1.8, Math.PI/2);
 
 // Bedroom: custom 180 × 220 bed, two 4-door wardrobes, drawers, bedside tables and makeup desk.
-furniture('Bed 180 × 220', 2.5, -3.2, Math.PI/2, g => {
+furniture('Bed 180 × 220', 2.5, -2.6, Math.PI/2, g => {
   meshBox(2.2, .34, 1.8, palette.cream, 0, .38, 0, g);
   meshBox(.14, 1.0, 1.92, palette.darkWood, -1.08, .58, 0, g);
   meshBox(.72, .13, .62, palette.white, -.55, .62, -.45, g);
@@ -288,16 +288,15 @@ furniture('Bed 180 × 220', 2.5, -3.2, Math.PI/2, g => {
 });
 cabinet('Wardrobe A — 4 door', 6.05, -4.25, 1.8, .6, 2.25, palette.cream, Math.PI/2);
 cabinet('Wardrobe B — 4 door', 6.05, -2.25, 1.8, .6, 2.25, palette.cream, Math.PI/2);
-cabinet('Bedroom drawers 1', 1.45, -4.82, 1.05, .48, .86, palette.wood, Math.PI);
-cabinet('Bedroom drawers 2', 2.65, -4.82, 1.05, .48, .86, palette.wood, Math.PI);
-cabinet('Bedside table 1', 1.25, -2.4, .48, .45, .5, palette.wood, Math.PI);
-cabinet('Bedside table 2', 3.75, -2.4, .48, .45, .5, palette.wood, Math.PI);
+cabinet('Bedroom drawers 1', 2.5, -4.82, 1.05, .48, .86, palette.wood, Math.PI);
+cabinet('Bedside table 1', 1.25, -1.8, .48, .45, .5, palette.wood, Math.PI);
+cabinet('Bedside table 2', 3.75, -1.8, .48, .45, .5, palette.wood, Math.PI);
 vanity('Makeup desk', 4.25, -4.72);
 simpleChair('Makeup chair', 4.25, -4.02, palette.cream, 0);
 furniture('Bedroom TV', 2.5, -5.02, 0, g => meshBox(1.25, .72, .05, palette.black, 0, 1.38, 0, g));
 
 // Clear wet core: guest WC on the left; full bathroom and laundry on the right.
-furniture('Bathroom shower', 5.72, -.67, 0, g => {
+furniture('Bathroom shower', 5.72, -.67, 3*Math.PI/2, g => {
   meshBox(1.0, .08, .9, palette.white, 0, .04, 0, g);
   meshBox(.04, 2.05, .9, palette.glass, .48, 1.03, 0, g);
   meshBox(1.0, 2.05, .04, palette.glass, 0, 1.03, .43, g);
@@ -314,16 +313,16 @@ desk('Large office desk 1.8 m', 4.6, 2.15, 1.8, Math.PI/2);
 simpleChair('Large office chair', 5.45, 2.15, palette.blue, Math.PI/2);
 bookshelf('Books behind desk', 6.12, 2.15, 2.15, 2.25, Math.PI/2);
 bookshelf('Main library wall', 3.55, 4.92, 3.2, 2.25, 0);
-furniture('Digital piano', 1.35, 3.65, -Math.PI/2, g => {
+furniture('Digital piano', 1.35, 3.85, -Math.PI/2, g => {
   meshBox(1.42, .18, .45, palette.black, 0, .82, 0, g);
   meshBox(1.35, .08, .35, palette.white, 0, .78, -.12, g);
   for (const sx of [-.58,.58]) meshBox(.07,.75,.35,palette.black,sx,.39,0,g);
 });
-furniture('Piano bench', 2.0, 3.65, Math.PI/2, g => meshBox(.62,.46,.34,palette.darkWood,0,.3,0,g));
+furniture('Piano bench', 2.0, 3.85, Math.PI/2, g => meshBox(.62,.46,.34,palette.darkWood,0,.3,0,g));
 furniture('Guitar stand', 1.25, 4.75, 0, g => { meshBox(.34,.56,.12,palette.wood,0,.62,0,g); meshBox(.11,.75,.08,palette.wood,0,1.25,0,g); });
 table('Coffee table', 3.5, 3.0, .75, .75, palette.wood, 0, true);
-simpleChair('Reading chair 1', 2.55, 3.0, palette.rust, -Math.PI/2);
-simpleChair('Reading chair 2', 4.45, 3.0, palette.green, Math.PI/2);
+simpleChair('Reading chair 1', 3.5, 3.95, palette.rust, 0);
+simpleChair('Reading chair 2', 3.5, 2.05, palette.green, Math.PI);
 
 const catalogLabels = {
   textLabel:'Text label', measurement:'Room measurement', sofa3:'3-seat sofa', sofa2:'2-seat sofa', armchair:'Armchair',
