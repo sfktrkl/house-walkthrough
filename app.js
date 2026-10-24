@@ -632,6 +632,23 @@ function isBasicShape(item) {
   return Boolean(item?.userData.catalogType?.startsWith('shape'));
 }
 
+function basicShapeColor(item) {
+  let color = '#ffffff';
+  item.traverse(object => {
+    if (object.isMesh && object.material?.color) color = `#${object.material.color.getHexString()}`;
+  });
+  return color;
+}
+
+function setSelectedShapeColor(color) {
+  const items = [...selectedItems];
+  if (!items.length || !items.every(isBasicShape)) return;
+  items.forEach(item => item.traverse(object => {
+    if (object.isMesh && object.material?.color) object.material.color.set(color);
+  }));
+  saveLayout(); refreshSelectionUI();
+}
+
 function highlightObject(item, active) {
   item.traverse(o => {
     if (o.isSprite && (o.userData.textSprite || o.userData.measurementLabel)) {
@@ -694,6 +711,8 @@ function refreshSelectionUI() {
   document.querySelector('#clearSelectionBtn').hidden = !editing;
   document.querySelector('#elevationBtn').hidden = !shapesOnly;
   document.querySelector('#scaleBtn').hidden = !shapesOnly;
+  document.querySelector('#colorBtn').hidden = !shapesOnly;
+  if (shapesOnly) document.querySelector('#shapeColorSwatch').style.backgroundColor = basicShapeColor(items[0]);
   document.querySelector('#editTextBtn').hidden = !editableLabel;
   requestAnimationFrame(updateCatalogTop);
 }
@@ -818,6 +837,7 @@ function currentLayoutObjects() {
     name:o.name, displayName:o.userData.displayName, kind:o.userData.kind || null,
     text:o.userData.text || null, roomName:o.userData.roomName || null,
     width:o.userData.width || null, depth:o.userData.depth || null,
+    color:isBasicShape(o) ? basicShapeColor(o) : null,
     x:o.position.x, y:o.position.y, z:o.position.z, r:o.rotation.y,
     sx:o.scale.x, sy:o.scale.y, sz:o.scale.z
   }));
@@ -916,6 +936,9 @@ function applyLayoutV3(state) {
     if (Number.isFinite(record.x) && Number.isFinite(record.z)) object.position.set(record.x, Number.isFinite(record.y) ? record.y : 0, record.z);
     if (Number.isFinite(record.r)) object.rotation.y = record.r;
     if (Number.isFinite(record.sx) && Number.isFinite(record.sy) && Number.isFinite(record.sz)) object.scale.set(record.sx, record.sy, record.sz);
+    if (isBasicShape(object) && /^#[0-9a-f]{6}$/i.test(record.color || '')) {
+      object.traverse(child => { if (child.isMesh && child.material?.color) child.material.color.set(record.color); });
+    }
     if (record.base && object.userData.kind === 'measurement') {
       const migratedName = record.roomName || record.text?.replace(/\n\d+(?:\.\d+)?\s*m²\s*$/, '') || object.userData.roomName;
       object.userData.roomName = migratedName; updateMeasurementLabel(object);
@@ -1082,6 +1105,14 @@ document.querySelector('#editTextBtn').addEventListener('click', editSelectedTex
 document.querySelector('#deleteBtn').addEventListener('click', deleteSelection);
 document.querySelector('#elevationBtn').addEventListener('click', setShapeElevation);
 document.querySelector('#scaleBtn').addEventListener('click', setShapeScale);
+document.querySelector('#colorBtn').addEventListener('click', () => {
+  const shape = [...selectedItems].find(isBasicShape);
+  if (!shape) return;
+  const picker = document.querySelector('#shapeColorInput');
+  picker.value = basicShapeColor(shape);
+  try { picker.showPicker(); } catch { picker.click(); }
+});
+document.querySelector('#shapeColorInput').addEventListener('change', event => setSelectedShapeColor(event.target.value));
 document.querySelector('#clearSelectionBtn').addEventListener('click', clearSelection);
 document.querySelector('#nudgeUpBtn').addEventListener('click', () => nudgeSelected(0, -.1));
 document.querySelector('#nudgeLeftBtn').addEventListener('click', () => nudgeSelected(-.1, 0));
