@@ -33,7 +33,7 @@ skyFill.position.set(8, 7, 7);
 scene.add(skyFill);
 
 const palette = {
-  wall: 0xf2eee5, trim: 0xd9d1c2, wood: 0x8d633f, darkWood: 0x4b3628,
+  wall: 0x999e9c, trim: 0xd9d1c2, wood: 0x8d633f, darkWood: 0x4b3628,
   blue: 0x4f7180, green: 0x617866, rust: 0xa5573e, cream: 0xd8c6a7,
   black: 0x252827, metal: 0x737a78, glass: 0x80b8c5, white: 0xf5f2e9,
 };
