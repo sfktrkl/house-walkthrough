@@ -73,7 +73,21 @@ function wall(x, z, w, d, h = 2.75) {
 }
 
 function floorRoom(name, area, x, z, w, d, color) {
-  textLabel(`${name} label`, x, z, name, true);
+  roomMeasurementLabel(`${name} label`, name, x, z, w, d);
+}
+
+function roomMeasurementLabel(objectName, roomName, x, z, width, depth) {
+  const measuredArea = width * depth;
+  const group = furniture(objectName, x, z, 0, g => {
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent:true, depthTest:false }));
+    sprite.position.y = .34; sprite.scale.set(2.1,.66,1); sprite.renderOrder = 21;
+    sprite.userData.measurementLabel = true; g.add(sprite);
+    drawTextSprite(sprite, `${roomName}\n${measuredArea.toFixed(1)} m²`);
+  });
+  group.userData.kind = 'measurement'; group.userData.width = width; group.userData.depth = depth;
+  group.userData.roomName = roomName; group.userData.base = true;
+  group.userData.displayName = `${roomName} · ${measuredArea.toFixed(1)} m²`;
+  return group;
 }
 
 // A single continuous floor replaces fixed room slabs and user-placeable floor tiles.
@@ -84,7 +98,7 @@ groundGrid.position.y = .004;
 groundGrid.material.transparent = true; groundGrid.material.opacity = .2;
 floorRoot.add(groundGrid);
 
-// The starting plan is only a movable example; area totals come from user-drawn measurements.
+// Starting room labels are real measurement objects and contribute to the live area total.
 floorRoom('Living + dining', '28.6', -3.5, -2.55, 5.6, 5.1, 0xb99a76);
 floorRoom('Cross hall', '4.5', -3.5, .6, 5.6, .8, 0xc3beb0);
 floorRoom('Kitchen', '12.5', -4.7, 3.15, 3.2, 3.9, 0xaeb8ad);
@@ -769,6 +783,10 @@ function applyLayoutV3(state) {
     if (Number.isFinite(record.x) && Number.isFinite(record.z)) object.position.set(record.x, Number.isFinite(record.y) ? record.y : 0, record.z);
     if (Number.isFinite(record.r)) object.rotation.y = record.r;
     if (Number.isFinite(record.sx) && Number.isFinite(record.sy) && Number.isFinite(record.sz)) object.scale.set(record.sx, record.sy, record.sz);
+    if (record.base && object.userData.kind === 'measurement') {
+      const migratedName = record.roomName || record.text?.replace(/\n\d+(?:\.\d+)?\s*m²\s*$/, '') || object.userData.roomName;
+      object.userData.roomName = migratedName; updateMeasurementLabel(object);
+    }
     if (record.text && object.userData.kind === 'label') {
       const text = record.base ? record.text.replace(/\n\d+(?:\.\d+)?\s*m²\s*$/, '') : record.text;
       updateTextLabel(object, text);
