@@ -26,7 +26,7 @@
       background: var(--panel); border: 1px solid var(--line); box-shadow: 0 14px 45px rgba(0,0,0,.24);
       backdrop-filter: blur(16px); border-radius: 16px;
     }
-    .brand { width: min(375px, calc(100vw - 36px)); padding: 13px 16px; flex: 0 0 auto; }
+    .brand { width: min(340px, calc(100vw - 36px)); padding: 13px 16px; flex: 0 0 auto; }
     .brand small { display:block; color: var(--accent); font-weight: 750; letter-spacing: .11em; text-transform: uppercase; font-size: 10px; }
     .brand h1 { font-size: 18px; margin: 4px 0 2px; letter-spacing: -.02em; }
     .brand p { margin: 0; color: var(--muted); font-size: 12px; }
@@ -38,19 +38,28 @@
     }
     button:hover { border-color: rgba(255,184,92,.65); }
     button.primary { background: var(--accent); color: #20170c; border-color: transparent; }
-    .panel { position: absolute; right: 18px; bottom: 18px; width: min(340px, calc(100vw - 36px)); padding: 14px; }
+    .panel { position: absolute; right: 18px; bottom: 18px; width: min(340px, calc(100vw - 36px)); max-height: calc(100vh - 36px); overflow-y: auto; padding: 14px; scrollbar-width: thin; scrollbar-color: rgba(255,184,92,.5) transparent; }
     .panel h2 { font-size: 13px; margin: 0 0 10px; }
     .stats { display:grid; grid-template-columns: 2fr 1fr; gap: 7px; margin-bottom: 11px; }
     .stat { padding: 9px; border-radius: 11px; background: rgba(255,255,255,.055); }
     .stat strong { display:block; font-size: 16px; }
     .stat span { color:var(--muted); font-size:10px; }
     #selection { color: var(--accent); font-size: 12px; min-height: 18px; }
+    .selected-objects { margin-top: 7px; pointer-events:auto; }
+    .selected-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; color:var(--muted); font-size:10px; font-weight:750; text-transform:uppercase; letter-spacing:.06em; }
+    #selectedCount { color:var(--accent); }
+    #selectedObjectList { display:grid; gap:4px; max-height:280px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(255,184,92,.5) transparent; }
+    .selected-object-row { display:flex; align-items:center; gap:6px; min-width:0; padding:5px 7px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.045); }
+    .selected-object-name { flex:1; min-width:0; overflow:hidden; color:var(--ink); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+    .deselect-object { display:flex; flex:0 0 22px; align-items:center; justify-content:center; width:22px; height:22px; padding:0; border-radius:6px; border-color:rgba(255,184,92,.35); background:rgba(255,184,92,.12); color:var(--accent); font-size:16px; line-height:1; cursor:pointer; pointer-events:auto; }
+    .deselect-object:hover { border-color:var(--accent); background:rgba(255,184,92,.24); }
+    .empty-selection { padding:5px 7px; color:var(--muted); font-size:10px; }
     .selection-actions { display:flex; gap:7px; margin:7px 0 3px; pointer-events:auto; }
     .selection-actions button { flex:1; padding:8px 9px; font-size:10px; }
     .selection-actions button:disabled { opacity:.38; cursor:not-allowed; }
     .help { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
     #catalog {
-      position: absolute; left: 18px; top: 108px; bottom: 18px; width: min(375px, calc(100vw - 36px));
+      position: absolute; left: 18px; top: 108px; bottom: 18px; width: min(340px, calc(100vw - 36px));
       padding: 13px; overflow-y: auto; pointer-events: auto;
       scrollbar-width: thin; scrollbar-color: rgba(255,184,92,.5) transparent;
     }
@@ -136,7 +145,7 @@
       <h3>Objects and construction</h3>
       <ul>
         <li>Spawn furniture, appliances, basic shapes, and modular walls from the left catalog.</li>
-        <li>The floor is not selectable. Left-click toggles an object in or out of the selection. <kbd>Esc</kbd> clears all.</li>
+        <li>The floor is not selectable. Left-click toggles an object in or out of the selection. The Selected objects list has an <kbd>×</kbd> button for each item; <kbd>Esc</kbd> clears all.</li>
         <li>Left-drag any selected object to move the whole selection. <kbd>R</kbd> rotates all selected objects 90° around their shared center; arrows nudge all by 10 cm.</li>
         <li>For basic shapes, <kbd>E</kbd> sets elevation above the floor and <kbd>K</kbd> sets a uniform or X/Y/Z scale; Y is height.</li>
         <li><kbd>Delete</kbd> or <kbd>Backspace</kbd> removes the selected object. Movable walls affect walkthrough collision.</li>
@@ -216,18 +225,22 @@
         </div>
       </div>
     </aside>
-    <div class="panel">
-      <h2>Measured space</h2>
+    <div class="panel" id="measuredPanel">
+      <h2>Workspace</h2>
       <div class="stats">
         <div class="stat"><strong id="totalMeasuredArea">0.0 m²</strong><span>total measured area</span></div>
         <div class="stat"><strong id="measurementCount">0</strong><span>measured rooms</span></div>
       </div>
       <div id="selection">No object selected</div>
+      <div class="selected-objects">
+        <div class="selected-heading"><span>Selected objects</span><span id="selectedCount">0</span></div>
+        <div id="selectedObjectList"><div class="empty-selection">No objects selected</div></div>
+      </div>
       <div class="selection-actions">
         <button id="elevationBtn" disabled>Elevation (E)</button>
         <button id="scaleBtn" disabled>Scale (K)</button>
       </div>
-      <p class="help"><b>Select:</b> left-click toggles objects in or out; Esc clears all. Drag, R, arrows, and Delete affect the group.<br><b>Shapes:</b> E sets elevation; K sets X/Y/Z scale.<br><b>Camera:</b> right-drag rotates; middle-drag pans; wheel zooms.<br><b>Measure:</b> M then drag. Select its text and press T to rename.<br><b>Walk:</b> V, then WASD + mouse. Esc releases the mouse.<br><b>Everything:</b> open Features (H) for the complete guide.</p>
+      <p class="help"><b>Select:</b> left-click toggles objects in or out; remove one with its X button above, or press Esc to clear all. Drag, R, arrows, and Delete affect the group.<br><b>Shapes:</b> E sets elevation; K sets X/Y/Z scale.<br><b>Camera:</b> right-drag rotates; middle-drag pans; wheel zooms.<br><b>Measure:</b> M then drag. Select its text and press T to rename.<br><b>Walk:</b> V, then WASD + mouse. Esc releases the mouse.<br><b>Everything:</b> open Features (H) for the complete guide.</p>
     </div>
     <div id="crosshair"></div>
     <div id="toast"></div>
@@ -236,3 +249,4 @@
   <script src="./app.js"></script>
 </body>
 </html>
+

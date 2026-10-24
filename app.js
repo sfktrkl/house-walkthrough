@@ -611,7 +611,7 @@ function highlightObject(item, active) {
     if (!o.isMesh || !o.material.emissive) return;
     if (active) {
       if (o.userData.originalEmissive === undefined) o.userData.originalEmissive = o.material.emissive.getHex();
-      o.material.emissive.setHex(0x3b2810);
+      o.material.emissive.setHex(0xffdf00);
     } else if (o.userData.originalEmissive !== undefined) {
       o.material.emissive.setHex(o.userData.originalEmissive);
     }
@@ -621,6 +621,27 @@ function highlightObject(item, active) {
 function refreshSelectionUI() {
   const items = [...selectedItems];
   selected = items.at(-1) || null;
+  const selectedCount = document.querySelector('#selectedCount');
+  const selectedList = document.querySelector('#selectedObjectList');
+  selectedCount.textContent = String(items.length);
+  selectedList.replaceChildren();
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-selection'; empty.textContent = 'No objects selected';
+    selectedList.append(empty);
+  } else {
+    items.forEach(item => {
+      const row = document.createElement('div'); row.className = 'selected-object-row';
+      const name = document.createElement('span'); name.className = 'selected-object-name';
+      name.textContent = item.userData.displayName || item.name || 'Object';
+      name.title = name.textContent;
+      const button = document.createElement('button'); button.className = 'deselect-object';
+      button.type = 'button'; button.textContent = '×';
+      button.setAttribute('aria-label', `Deselect ${name.textContent}`);
+      button.addEventListener('click', () => removeSelected(item));
+      row.append(name, button); selectedList.append(row);
+    });
+  }
   if (!items.length) selectionEl.textContent = 'No object selected';
   else if (items.length > 1) selectionEl.textContent = `${items.length} objects selected`;
   else {
