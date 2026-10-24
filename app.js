@@ -15,9 +15,9 @@ renderer.setClearColor(0xdce8e4, 1);
 document.body.prepend(renderer.domElement);
 document.querySelector('#boot')?.remove();
 
-// Broad daylight keeps every room readable; invisible warm point lights add depth indoors.
-scene.add(new THREE.AmbientLight(0xfffbf2, .34));
-scene.add(new THREE.HemisphereLight(0xf8fbff, 0x7b867f, .58));
+// Uniform daylight keeps the freely editable workspace readable without placed light objects.
+scene.add(new THREE.AmbientLight(0xfffbf2, .48));
+scene.add(new THREE.HemisphereLight(0xf8fbff, 0x7b867f, .72));
 const sun = new THREE.DirectionalLight(0xfff0d1, 1.05);
 sun.position.set(-8, 13, -6);
 sun.castShadow = true;
@@ -57,12 +57,6 @@ function meshBox(w, h, d, color, x = 0, y = h / 2, z = 0, parent = scene) {
   return mesh;
 }
 
-function ceilingLight(x, z, intensity = 1.15) {
-  const light = new THREE.PointLight(0xffdfad, intensity * .32, 5.5, 2);
-  light.position.set(x, 2.48, z);
-  scene.add(light);
-}
-
 function wall(x, z, w, d, h = 2.75) {
   wallSerial += 1;
   const group = new THREE.Group();
@@ -99,17 +93,6 @@ floorRoom('Main hall', '11.2', .05, 0, 1.1, 10.2, 0xc3beb0);
 floorRoom('Bedroom', '20.4', 3.55, -3.25, 5.5, 3.7, 0xb9adab);
 floorRoom('Bath + WC + foyer', '10.4', 3.55, -.25, 5.5, 1.9, 0xa7b8b5);
 floorRoom('Music + library office', '23.1', 3.55, 3.0, 5.5, 4.2, 0xb6a688);
-
-ceilingLight(-4.35, -2.75, 1.35);
-ceilingLight(-2.55, -.65, 1.2);
-ceilingLight(-4.75, 3.15, 1.25);
-ceilingLight(-1.9, 3.2, 1.05);
-ceilingLight(.05, -2.2, .85);
-ceilingLight(.05, 2.7, .85);
-ceilingLight(3.55, -3.25, 1.25);
-ceilingLight(3.55, -.25, 1.05);
-ceilingLight(2.4, 3.15, 1.15);
-ceilingLight(4.95, 3.15, 1.15);
 
 // Outside shell; the south entrance is left open.
 wall(-3.48, -5.3, 5.84, .2); wall(3.48, -5.3, 5.84, .2);
