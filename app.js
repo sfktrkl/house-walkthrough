@@ -505,9 +505,9 @@ const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 let selected = null;
 const selectedItems = new Set();
 let dragging = false;
+let pointerDown = null;
 let dragStartPoint = new THREE.Vector3();
 let dragStarts = new Map();
-let rightDown = null;
 let measureMode = false;
 let measuring = false;
 let measureStart = null;
@@ -664,15 +664,8 @@ function pointerFromEvent(e) {
 
 renderer.domElement.addEventListener('pointerdown', e => {
   if (mode !== 'plan') return;
-  pointerFromEvent(e);
-  if (e.button === 2) {
-    rightDown = {
-      x:e.clientX, y:e.clientY,
-      item:rootsFromIntersections(raycaster.intersectObjects(movable, true))
-    };
-    return;
-  }
   if (e.button !== 0) return;
+  pointerFromEvent(e);
   if (measureMode) {
     const hit = new THREE.Vector3();
     if (raycaster.ray.intersectPlane(floorPlane, hit)) {
@@ -683,12 +676,13 @@ renderer.domElement.addEventListener('pointerdown', e => {
   }
   const item = rootsFromIntersections(raycaster.intersectObjects(movable, true));
   if (!item) return;
-  addSelected(item);
-  orbit.enabled = false;
-  const hit = new THREE.Vector3(); raycaster.ray.intersectPlane(floorPlane, hit);
-  dragStartPoint.copy(hit);
+  const wasSelected = selectedItems.has(item);
+  if (!wasSelected) addSelected(item);
+  const hit = new THREE.Vector3();
+  if (!raycaster.ray.intersectPlane(floorPlane, hit)) return;
+  pointerDown = { x:e.clientX, y:e.clientY, item, wasSelected };
+  dragStartPoint.copy(hit); dragging = false;
   dragStarts = new Map([...selectedItems].map(object => [object, object.position.clone()]));
-  dragging = true;
   renderer.domElement.setPointerCapture(e.pointerId);
 }, true);
 renderer.domElement.addEventListener('pointermove', e => {
@@ -697,7 +691,9 @@ renderer.domElement.addEventListener('pointermove', e => {
     if (raycaster.ray.intersectPlane(floorPlane, hit)) updateMeasurementDraft(hit);
     return;
   }
-  if (!dragging || !selectedItems.size || mode !== 'plan') return;
+  if (!pointerDown || !selectedItems.size || mode !== 'plan') return;
+  if (!dragging && Math.hypot(e.clientX-pointerDown.x, e.clientY-pointerDown.y) < 5) return;
+  dragging = true; orbit.enabled = false;
   pointerFromEvent(e); const hit = new THREE.Vector3();
   if (raycaster.ray.intersectPlane(floorPlane, hit)) {
     const dx = hit.x-dragStartPoint.x, dz = hit.z-dragStartPoint.z;
@@ -707,18 +703,15 @@ renderer.domElement.addEventListener('pointermove', e => {
   }
 }, true);
 renderer.domElement.addEventListener('pointerup', e => {
-  if (e.button === 2 && rightDown) {
-    const moved = Math.hypot(e.clientX-rightDown.x, e.clientY-rightDown.y);
-    if (moved < 5 && rightDown.item) removeSelected(rightDown.item);
-    rightDown = null; return;
-  }
   if (measuring) {
     finishMeasurement();
     setTimeout(() => { if (mode === 'plan') orbit.enabled = true; }, 0);
     return;
   }
-  if (!dragging) return;
-  dragging = false; saveLayout();
+  if (e.button !== 0 || !pointerDown) return;
+  if (dragging) saveLayout();
+  else if (pointerDown.wasSelected) removeSelected(pointerDown.item);
+  dragging = false; pointerDown = null;
   setTimeout(() => { if (mode === 'plan') orbit.enabled = true; }, 0);
 }, true);
 renderer.domElement.addEventListener('contextmenu', e => {

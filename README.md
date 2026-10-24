@@ -15,7 +15,7 @@ There is no fixed house-size claim because the walls are editable. The **Measure
 - **Feature guide:** press `H` or use **Features (H)** for the complete in-app feature and shortcut list.
 - **Floor plan / edit:** press `P`; right-drag to rotate the camera, middle-drag to pan, and scroll to zoom. Left-drag is reserved for moving objects, and the continuous floor is not selectable.
 - **Add objects:** use the left catalog to add furniture, combinable basic shapes, modular walls, or text labels at the centre of the plan.
-- **Multi-select and move:** left-click adds objects to the selection, a short right-click removes them, and `Esc` clears the selection. Drag one selected object to move the entire group anywhere on the continuous ground plane.
+- **Multi-select and move:** left-click toggles an object in or out of the selection, and `Esc` clears the selection. Drag a selected object to move the entire group anywhere on the continuous ground plane.
 - **Rotate:** press `R` to rotate all selected objects 90° around their shared center.
 - **Stack and scale shapes:** select one or more basic shapes, then press `E` to set their elevation above the floor or `K` to enter a uniform or X/Y/Z scale. Y controls height.
 - **Delete:** select an object and press `Delete` / `Backspace`, or use **Delete selected**.
