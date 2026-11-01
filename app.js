@@ -558,6 +558,9 @@ const pointer = new THREE.Vector2();
 const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 let selected = null;
 const selectedItems = new Set();
+let copyBuffer = [];
+let duplicateSerial = 0;
+let pasteOffsetCount = 0;
 let dragging = false;
 let pointerDown = null;
 let dragStartPoint = new THREE.Vector3();
@@ -743,6 +746,7 @@ function refreshSelectionUI() {
     selectionEl.textContent = `Selected: ${item.userData.displayName}${detail}`;
   }
   const editing = mode === 'plan' && items.length > 0;
+  const canPaste = mode === 'plan' && copyBuffer.length > 0;
   const shapesOnly = editing && items.every(isBasicShape);
   const oneWall = editing && items.length === 1 && items[0].userData.kind === 'wall';
   const editableLabel = editing && items.length === 1 && ['label', 'measurement'].includes(items[0].userData.kind);
@@ -750,6 +754,8 @@ function refreshSelectionUI() {
   document.querySelector('#contextHint').textContent = mode === 'walk' ? 'Switch to Plan to edit objects' : 'Select an object to see its actions';
   document.querySelector('#nudgeLabel').hidden = !editing;
   document.querySelector('#nudgeButtons').hidden = !editing;
+  document.querySelector('#copyBtn').hidden = !editing;
+  document.querySelector('#pasteBtn').hidden = !canPaste;
   document.querySelector('#rotateBtn').hidden = !editing;
   document.querySelector('#deleteBtn').hidden = !editing;
   document.querySelector('#clearSelectionBtn').hidden = !editing;
@@ -781,6 +787,53 @@ function addSelected(item) {
 function removeSelected(item) {
   if (!item || !selectedItems.has(item)) return;
   highlightObject(item, false); selectedItems.delete(item); refreshSelectionUI();
+}
+
+function clearCopyBuffer() {
+  copyBuffer.forEach(object => object.traverse(child => {
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach(material => {
+      material?.map?.dispose(); material?.dispose();
+    });
+  }));
+  copyBuffer = [];
+}
+
+function copySelection() {
+  if (!selectedItems.size || mode !== 'plan') return;
+  clearCopyBuffer();
+  copyBuffer = [...selectedItems].map(source => {
+    const copy = cloneObject(source);
+    highlightObject(copy, false);
+    copy.userData.base = false;
+    copy.userData.cloneOf = source.userData.cloneOf || (source.userData.base ? source.userData.objectId : null);
+    return copy;
+  });
+  pasteOffsetCount = 0;
+  refreshSelectionUI();
+  toast(`${copyBuffer.length} object${copyBuffer.length === 1 ? '' : 's'} copied`);
+}
+
+function pasteCopiedObjects() {
+  if (!copyBuffer.length || mode !== 'plan') return;
+  clearSelection();
+  const offset = .5 * ++pasteOffsetCount;
+  copyBuffer.forEach(source => {
+    const copy = cloneObject(source);
+    duplicateSerial += 1;
+    copy.position.x += offset; copy.position.z += offset;
+    copy.name = `${source.name} copy ${duplicateSerial}`;
+    copy.userData.base = false;
+    copy.userData.objectId = `copy:${Date.now()}:${duplicateSerial}`;
+    copy.userData.cloneOf = source.userData.cloneOf || null;
+    copy.userData.displayName = `${source.userData.displayName || source.name} copy`;
+    highlightObject(copy, false);
+    registerObject(copy);
+    selectedItems.add(copy); highlightObject(copy, true);
+  });
+  updateMeasuredAreaStats();
+  refreshSelectionUI(); saveLayout();
+  toast(`${copyBuffer.length} object${copyBuffer.length === 1 ? '' : 's'} pasted`);
 }
 
 function pointerFromEvent(e) {
@@ -879,6 +932,7 @@ function updateCatalogTop() {
 function currentLayoutObjects() {
   return movable.map(o => ({
     id:o.userData.objectId, base:Boolean(o.userData.base), template:o.userData.catalogType || null,
+    cloneOf:o.userData.cloneOf || null,
     name:o.name, displayName:o.userData.displayName, kind:o.userData.kind || null,
     text:o.userData.text || null, roomName:o.userData.roomName || null,
     width:o.userData.width || null, depth:o.userData.depth || null,
@@ -966,6 +1020,7 @@ function applyLayoutV3(state) {
   state.objects.forEach(record => {
     let object = null;
     if (record.base && baseBlueprints.has(record.id)) object = registerObject(cloneObject(baseBlueprints.get(record.id)));
+    else if (record.cloneOf && baseBlueprints.has(record.cloneOf)) object = registerObject(cloneObject(baseBlueprints.get(record.cloneOf)));
     else if (record.template === 'measurement' && Number.isFinite(record.width) && Number.isFinite(record.depth)) {
       object = createMeasurement(record.width, record.depth, record.x || 0, record.z || 0, {
         id:record.id, name:record.name, roomName:record.roomName, rotation:record.r, select:false
@@ -977,6 +1032,8 @@ function applyLayoutV3(state) {
     if (!object) return;
     object.userData.objectId = record.id;
     object.userData.base = Boolean(record.base);
+    if (record.cloneOf) object.userData.cloneOf = record.cloneOf;
+    object.name = record.name || object.name;
     object.userData.displayName = record.displayName || record.name;
     if (Number.isFinite(record.x) && Number.isFinite(record.z)) object.position.set(record.x, Number.isFinite(record.y) ? record.y : 0, record.z);
     if (Number.isFinite(record.r)) object.rotation.y = record.r;
@@ -987,6 +1044,12 @@ function applyLayoutV3(state) {
     if (record.base && object.userData.kind === 'measurement') {
       const migratedName = record.roomName || record.text?.replace(/\n\d+(?:\.\d+)?\s*m²\s*$/, '') || object.userData.roomName;
       object.userData.roomName = migratedName; updateMeasurementLabel(object);
+    }
+    if (record.cloneOf && object.userData.kind === 'measurement') {
+      if (Number.isFinite(record.width)) object.userData.width = record.width;
+      if (Number.isFinite(record.depth)) object.userData.depth = record.depth;
+      object.userData.roomName = record.roomName || object.userData.roomName;
+      updateMeasurementLabel(object);
     }
     if (record.text && object.userData.kind === 'label') {
       const text = record.base ? record.text.replace(/\n\d+(?:\.\d+)?\s*m²\s*$/, '') : record.text;
@@ -1163,6 +1226,8 @@ document.querySelector('#measureBtn').addEventListener('click', () => {
 document.querySelector('#rotateBtn').addEventListener('click', rotateSelected);
 document.querySelector('#undoBtn').addEventListener('click', undoLayout);
 document.querySelector('#redoBtn').addEventListener('click', redoLayout);
+document.querySelector('#copyBtn').addEventListener('click', copySelection);
+document.querySelector('#pasteBtn').addEventListener('click', pasteCopiedObjects);
 document.querySelector('#editTextBtn').addEventListener('click', editSelectedText);
 document.querySelector('#wallLengthBtn').addEventListener('click', editSelectedWallLength);
 document.querySelector('#deleteBtn').addEventListener('click', deleteSelection);
@@ -1203,6 +1268,12 @@ document.querySelectorAll('[data-spawn]').forEach(button => button.addEventListe
   if (object) saveLayout();
 }));
 addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC' && mode === 'plan' && selectedItems.size) {
+    e.preventDefault(); copySelection(); return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV' && mode === 'plan' && copyBuffer.length) {
+    e.preventDefault(); pasteCopiedObjects(); return;
+  }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
     e.preventDefault();
     if (e.shiftKey) redoLayout(); else undoLayout();

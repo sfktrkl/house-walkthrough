@@ -144,6 +144,8 @@
       </div>
       <div class="context-actions" id="contextActions" aria-label="Available object actions">
         <span class="context-hint" id="contextHint">Select an object to see its actions</span>
+        <button id="copyBtn" type="button" title="Copy selected objects (Ctrl+C)" hidden>Copy (Ctrl+C)</button>
+        <button id="pasteBtn" type="button" title="Paste copied objects (Ctrl+V)" hidden>Paste (Ctrl+V)</button>
         <span class="nudge-label" id="nudgeLabel" hidden>Move 10 cm (arrows)</span>
         <span class="nudge-buttons" id="nudgeButtons" hidden>
           <button id="nudgeUpBtn" type="button" aria-label="Move selected objects up" title="Move 10 cm up">↑</button>
@@ -172,6 +174,7 @@
       </ul>
       <h3>Objects and construction</h3>
       <ul>
+        <li><kbd>Ctrl</kbd>+<kbd>C</kbd> copies selected objects; <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes slightly offset copies and selects only the new objects. The toolbar also has Copy and Paste buttons.</li>
         <li>Spawn furniture, appliances, basic shapes, and modular walls from the left catalog.</li>
         <li>The floor is not selectable. Left-click toggles an object in or out of the selection. The Selected objects list has an <kbd>×</kbd> button for each item; use Deselect all or <kbd>Esc</kbd> to clear the selection.</li>
         <li>The second toolbar row shows the actions available for the current selection. Left-drag moves the selection; its arrows nudge by 10 cm and Rotate turns the group 90° around its shared center.</li>

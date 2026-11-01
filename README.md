@@ -28,6 +28,7 @@ The example arrangement is a starting point. Walls and objects can be moved, and
 | Zoom | Mouse wheel |
 | Select or deselect an object | Left-click |
 | Move selected objects | Left-drag |
+| Copy / paste selected objects | `Ctrl+C` / `Ctrl+V` or toolbar buttons |
 | Move selected objects by 10 cm | Arrow keys |
 | Rotate selected objects | `R` |
 | Set object elevation / scale | `E` / `K` |
@@ -41,3 +42,5 @@ The example arrangement is a starting point. Walls and objects can be moved, and
 | Open the full feature guide | `H` |
 
 In walkthrough mode, use `W`, `A`, `S`, and `D` to move and the mouse to look around. Press `Esc` to release the mouse.
+
+Pasted objects appear slightly offset from the originals and become the only selected objects.
