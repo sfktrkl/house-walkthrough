@@ -665,6 +665,16 @@ function isBasicShape(item) {
   return Boolean(item?.userData.catalogType?.startsWith('shape'));
 }
 
+function wallLengthAxis(item) {
+  return item.userData.wallSizeX >= item.userData.wallSizeZ ? 'x' : 'z';
+}
+
+function wallLength(item) {
+  const axis = wallLengthAxis(item);
+  const dimension = axis === 'x' ? 'wallSizeX' : 'wallSizeZ';
+  return item.userData[dimension] * Math.abs(item.scale[axis]);
+}
+
 function basicShapeColor(item) {
   let color = '#ffffff';
   item.traverse(object => {
@@ -729,11 +739,12 @@ function refreshSelectionUI() {
     const item = items[0];
     const detail = isBasicShape(item)
       ? ` · elevation ${item.position.y.toFixed(2)} m · scale ${item.scale.x.toFixed(2)}, ${item.scale.y.toFixed(2)}, ${item.scale.z.toFixed(2)}`
-      : '';
+      : item.userData.kind === 'wall' ? ` · length ${wallLength(item).toFixed(2)} m` : '';
     selectionEl.textContent = `Selected: ${item.userData.displayName}${detail}`;
   }
   const editing = mode === 'plan' && items.length > 0;
   const shapesOnly = editing && items.every(isBasicShape);
+  const oneWall = editing && items.length === 1 && items[0].userData.kind === 'wall';
   const editableLabel = editing && items.length === 1 && ['label', 'measurement'].includes(items[0].userData.kind);
   document.querySelector('#contextHint').hidden = editing;
   document.querySelector('#contextHint').textContent = mode === 'walk' ? 'Switch to Plan to edit objects' : 'Select an object to see its actions';
@@ -744,6 +755,7 @@ function refreshSelectionUI() {
   document.querySelector('#clearSelectionBtn').hidden = !editing;
   document.querySelector('#elevationBtn').hidden = !shapesOnly;
   document.querySelector('#scaleBtn').hidden = !shapesOnly;
+  document.querySelector('#wallLengthBtn').hidden = !oneWall;
   document.querySelector('#colorBtn').hidden = !shapesOnly;
   if (shapesOnly) document.querySelector('#shapeColorSwatch').style.backgroundColor = basicShapeColor(items[0]);
   document.querySelector('#editTextBtn').hidden = !editableLabel;
@@ -1078,6 +1090,23 @@ function editSelectedText() {
   updateTextLabel(item, value.trim().replace(/\s*\|\s*/g, '\n')); saveLayout();
 }
 
+function editSelectedWallLength() {
+  if (selectedItems.size !== 1) return;
+  const wall = [...selectedItems][0];
+  if (wall.userData.kind !== 'wall') return;
+  const value = prompt('Wall length in metres:', wallLength(wall).toFixed(2));
+  if (value === null) return;
+  const length = Number(value.replace(',', '.'));
+  if (!Number.isFinite(length) || length < .14) {
+    toast('Enter a wall length of at least 0.14 m'); return;
+  }
+  const axis = wallLengthAxis(wall);
+  const dimension = axis === 'x' ? 'wallSizeX' : 'wallSizeZ';
+  wall.scale[axis] = length / wall.userData[dimension];
+  wall.userData.displayName = `Wall ${length.toFixed(2)} m`;
+  saveLayout(); refreshSelectionUI();
+}
+
 function setShapeElevation() {
   const items = [...selectedItems];
   if (!items.length || !items.every(isBasicShape)) { toast('Select one or more basic shapes'); return; }
@@ -1135,6 +1164,7 @@ document.querySelector('#rotateBtn').addEventListener('click', rotateSelected);
 document.querySelector('#undoBtn').addEventListener('click', undoLayout);
 document.querySelector('#redoBtn').addEventListener('click', redoLayout);
 document.querySelector('#editTextBtn').addEventListener('click', editSelectedText);
+document.querySelector('#wallLengthBtn').addEventListener('click', editSelectedWallLength);
 document.querySelector('#deleteBtn').addEventListener('click', deleteSelection);
 document.querySelector('#elevationBtn').addEventListener('click', setShapeElevation);
 document.querySelector('#scaleBtn').addEventListener('click', setShapeScale);
@@ -1219,8 +1249,10 @@ function playerCollides(pos) {
   return movable.some(object => {
     if (object.userData.kind !== 'wall') return false;
     const horizontal = Math.abs(Math.cos(object.rotation.y)) > .5;
-    const halfX = (horizontal ? object.userData.wallSizeX : object.userData.wallSizeZ) / 2;
-    const halfZ = (horizontal ? object.userData.wallSizeZ : object.userData.wallSizeX) / 2;
+    const localSizeX = object.userData.wallSizeX * Math.abs(object.scale.x);
+    const localSizeZ = object.userData.wallSizeZ * Math.abs(object.scale.z);
+    const halfX = (horizontal ? localSizeX : localSizeZ) / 2;
+    const halfZ = (horizontal ? localSizeZ : localSizeX) / 2;
     return Math.abs(pos.x-object.position.x) < halfX+radius && Math.abs(pos.z-object.position.z) < halfZ+radius;
   });
 }

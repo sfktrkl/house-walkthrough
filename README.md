@@ -31,6 +31,7 @@ The example arrangement is a starting point. Walls and objects can be moved, and
 | Move selected objects by 10 cm | Arrow keys |
 | Rotate selected objects | `R` |
 | Set object elevation / scale | `E` / `K` |
+| Set a selected wall's length | **Wall length** toolbar button |
 | Edit a selected text or room label | `T` |
 | Delete selected objects | `Delete` or `Backspace` |
 | Measure a room | `M`, then drag a rectangle |
