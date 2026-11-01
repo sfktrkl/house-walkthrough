@@ -340,6 +340,36 @@ const catalogLabels = {
   wall05:'Wall 0.5 m', wall1:'Wall 1 m', wall2:'Wall 2 m', wall3:'Wall 3 m', wall4:'Wall 4 m',
 };
 
+const catalogDimensions = {
+  textLabel:'2D label · text-sized',
+  shapeSquare:'1 × 1 m', shapeRectangle:'2 × 1 m', shapeCircle:'1 × 1 m',
+  shapeTriangle:'1.07 × 0.93 m', shapeCube:'1 × 1 m', shapeBox:'2 × 1 m',
+  shapeCylinder:'1 × 1 m', shapeSphere:'1 × 1 m',
+  sofa3:'2.35 × 0.82 m', sofa2:'1.65 × 0.82 m', armchair:'0.68 × 0.68 m', diningChair:'0.68 × 0.68 m',
+  diningTable:'2.05 × 0.95 m', coffeeTable:'0.75 × 0.75 m', tv75:'1.67 × 0.05 m', tv55:'1.25 × 0.05 m',
+  tvConsole:'2.1 × 0.38 m', sideboard:'1.45 × 0.38 m',
+  desk160:'1.6 × 0.72 m', desk180:'1.8 × 0.72 m', officeChair:'0.68 × 0.68 m',
+  bookshelfSmall:'1.5 × 0.34 m', bookshelfLarge:'3 × 0.34 m', drawers:'1.05 × 0.48 m',
+  bed180:'1.8 × 2.2 m', wardrobe4:'1.8 × 0.6 m', bedside:'0.48 × 0.45 m',
+  piano:'1.42 × 0.45 m', pianoBench:'0.62 × 0.34 m', guitar:'0.34 × 0.12 m', guitarStand:'0.34 × 0.12 m',
+  makeupDesk:'1.15 × 0.48 m', baseCabinet:'0.8 × 0.58 m', counter28:'2.8 × 0.58 m',
+  counter31:'3.1 × 0.58 m', fridge:'0.78 × 0.72 m', oven:'0.62 × 0.58 m',
+  dishwasher:'0.62 × 0.58 m', sink:'0.82 × 0.44 m', toilet:'0.42 × 0.68 m',
+  shower:'1 × 0.9 m', washer:'0.62 × 0.62 m', dryer:'0.62 × 0.62 m',
+  wall05:'0.5 × 0.14 m', wall1:'1 × 0.14 m', wall2:'2 × 0.14 m',
+  wall3:'3 × 0.14 m', wall4:'4 × 0.14 m',
+};
+
+document.querySelectorAll('[data-spawn]').forEach(button => {
+  const name = button.textContent.trim();
+  const dimensions = catalogDimensions[button.dataset.spawn];
+  const description = document.createElement('span');
+  description.className = 'catalog-dimensions';
+  description.textContent = dimensions;
+  button.append(description);
+  button.title = `${name} — ${dimensions}`;
+});
+
 function spawnedName(type) {
   spawnSerial += 1;
   return `${catalogLabels[type] || type} ${spawnSerial}`;

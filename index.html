@@ -76,6 +76,7 @@
     .catalog-group h3 { margin: 0 0 7px; color: var(--accent); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; }
     .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .catalog-grid button { padding: 8px 7px; border-radius: 9px; font-size: 10px; line-height: 1.2; }
+    .catalog-dimensions { display:block; margin-top:3px; color:var(--muted); font-size:9px; font-weight:500; }
     #featuresPanel {
       top: 70px; right: 18px; bottom: auto; width: min(460px, calc(100vw - 36px));
       max-height: calc(100vh - 90px); overflow-y: auto; display: none; pointer-events: auto;
@@ -195,7 +196,7 @@
     </aside>
     <aside id="catalog" class="panel">
       <h2>Object catalog</h2>
-      <p class="catalog-note">Click an item to place it at the house centre, then drag it into position.</p>
+      <p class="catalog-note">Dimensions show default width × depth. Click an item to place it at the house centre, then drag it into position.</p>
       <div class="catalog-group">
         <h3>Labels</h3>
         <div class="catalog-grid"><button data-spawn="textLabel">Text label</button></div>
